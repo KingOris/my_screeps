@@ -1,0 +1,35 @@
+{
+  "name": "my_screeps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "push": "rollup -cw --environment DEST:main",
+    "build": "rollup -cw",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KingOris/my_screeps.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KingOris/my_screeps/issues"
+  },
+  "homepage": "https://github.com/KingOris/my_screeps#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^19.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "@types/lodash": "^3.10.1",
+    "@types/screeps": "^3.2.2",
+    "rollup": "^2.47.0",
+    "rollup-plugin-clear": "^2.0.7",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-screeps": "^1.0.1"
+  },
+  "dependencies": {
+    "source-map": "^0.6.1"
+  }
+}
