@@ -15,9 +15,9 @@ for(var name in Memory.creeps){
 var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
 
 //自动生成harvester
-if(harvesters.length < 2){
+if(harvesters.length < 3){
     var newName = 'Harvester' + Game.time
-    if(Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, {memory: {role: 'harvester'}}) == 0){
+    if(Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, {memory: {role: 'harvester', building: false}}) == 0){
         console.log('Spawning new Harvester: ' + newName);
     }
 }

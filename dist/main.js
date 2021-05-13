@@ -3152,19 +3152,14 @@ SourceNode.prototype.toStringWithSourceMap = function SourceNode_toStringWithSou
  */
 var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
 
-/**
- * 校正异常的堆栈信息
- * 
- * 由于 rollup 会打包所有代码到一个文件，所以异常的调用栈定位和源码的位置是不同的
- * 本模块就是用来将异常的调用栈映射至源代码位置
- * 
- * @see https://github.com/screepers/screeps-typescript-starter/blob/master/src/utils/ErrorMapper.ts
- */
+//@ts-nocheck
 
  // 缓存 SourceMap
  let consumer = null;
  
- // 第一次报错时创建 sourceMap
+ /**
+  *  第一次报错时创建 sourceMap
+  */
  const getConsumer = function () {
      if (consumer == null) consumer = new SourceMapConsumer(require("main.js.map"));
      return consumer
@@ -3309,9 +3304,9 @@ const loop = errorMapper(() => {
     //监测harvesters的数量
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     //自动生成harvester
-    if (harvesters.length < 2) {
+    if (harvesters.length < 3) {
         var newName = 'Harvester' + Game.time;
-        if (Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, { memory: { role: 'harvester' } }) == 0) {
+        if (Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, { memory: { role: 'harvester', building: false } }) == 0) {
             console.log('Spawning new Harvester: ' + newName);
         }
     }
