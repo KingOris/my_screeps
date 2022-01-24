@@ -6,7 +6,8 @@
   "scripts": {
     "push": "rollup -cw --environment DEST:main",
     "build": "rollup -cw",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test-c": "jest --coverage"
   },
   "repository": {
     "type": "git",
@@ -22,13 +23,18 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "^19.0.0",
     "@rollup/plugin-node-resolve": "^13.0.0",
+    "@screeps/common": "^2.15.3",
+    "@types/jest": "^27.4.0",
     "@types/lodash": "^3.10.1",
     "@types/screeps": "^3.2.2",
+    "jest": "^27.4.7",
+    "lodash": "^3.10.1",
     "rollup": "^2.47.0",
     "rollup-plugin-clear": "^2.0.7",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-screeps": "^1.0.1",
     "rollup-plugin-typescript2": "^0.30.0",
+    "ts-jest": "^27.1.3",
     "typescript": "^4.2.4"
   },
   "dependencies": {
