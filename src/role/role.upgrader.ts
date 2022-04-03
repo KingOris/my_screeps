@@ -13,8 +13,8 @@ const upgrader = (data:CreepData) : CreepApi => ({
         let sourceStructure : StructureContainer | StructureStorage 
 
         if(creep.memory.targetId && creep.memory.sourceId){
-            target = Game.getObjectById<StructureController>(data.targetId)!
-            sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(data.sourceId)!
+            target = Game.getObjectById<StructureController>(creep.memory.targetId)!
+            sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId)!
             return true
         }
 
@@ -25,11 +25,11 @@ const upgrader = (data:CreepData) : CreepApi => ({
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
         const containersWithEnergy = creep.room.find(FIND_STRUCTURES, {
-            filter: (i: StructureContainer | StructureStorage) => i.store[RESOURCE_ENERGY] > 0
+            filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
         })
         
 
-        if (containersWithEnergy){
+        if (containersWithEnergy.length){
             for (let i of containersWithEnergy){
                 if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500){
                     creep.memory.sourceId = i.id
@@ -41,7 +41,7 @@ const upgrader = (data:CreepData) : CreepApi => ({
             }
         }else{
             creep.say('我是傻x')
-            creep.suicide()
+            //creep.suicide()
         }
 
         return false
@@ -53,7 +53,7 @@ const upgrader = (data:CreepData) : CreepApi => ({
             return true
         }
 
-        let sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(data.sourceId)!
+        let sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
 
         if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
             creep.suicide()
@@ -67,9 +67,15 @@ const upgrader = (data:CreepData) : CreepApi => ({
     },
 
     target: creep => {
-        if (creep.upgradeController(Game.getObjectById<StructureController>(data.targetId)!)== ERR_NOT_ENOUGH_ENERGY){
+        let target = Game.getObjectById<StructureController>(creep.memory.targetId!)!
+        if (creep.upgradeController(target)== ERR_NOT_IN_RANGE){
+            creep.moveTo(target)
+        }
+
+        if (creep.upgradeController(target)== ERR_NOT_ENOUGH_ENERGY){
             return true
         }
+        
         return false
     }
 })
