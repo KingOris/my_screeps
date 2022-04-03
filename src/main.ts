@@ -15,7 +15,7 @@ export const loop = errorMapper(() => {
 
     //监测harvesters的数量
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-
+    
     //自动生成harvester
     if(harvesters.length < 2){
         var newName = 'Harvester' + Game.time

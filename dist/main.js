@@ -15705,8 +15705,8 @@ const harvester = (data) => ({
 const upgrader = (data) => ({
     prepare: creep => {
         if (creep.memory.targetId && creep.memory.sourceId) {
-            Game.getObjectById(data.targetId);
-            Game.getObjectById(data.sourceId);
+            Game.getObjectById(creep.memory.targetId);
+            Game.getObjectById(creep.memory.sourceId);
             return true;
         }
         if (!creep.memory.targetId) {
@@ -15715,9 +15715,9 @@ const upgrader = (data) => ({
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
         const containersWithEnergy = creep.room.find(FIND_STRUCTURES, {
-            filter: (i) => i.store[RESOURCE_ENERGY] > 0
+            filter: (i) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
         });
-        if (containersWithEnergy) {
+        if (containersWithEnergy.length) {
             for (let i of containersWithEnergy) {
                 if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500) {
                     creep.memory.sourceId = i.id;
@@ -15729,7 +15729,7 @@ const upgrader = (data) => ({
         }
         else {
             creep.say('我是傻x');
-            creep.suicide();
+            //creep.suicide()
         }
         return false;
     },
@@ -15737,7 +15737,7 @@ const upgrader = (data) => ({
         if (creep.store[RESOURCE_ENERGY] > 0) {
             return true;
         }
-        let sourceStructure = Game.getObjectById(data.sourceId);
+        let sourceStructure = Game.getObjectById(creep.memory.sourceId);
         if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.suicide();
         }
@@ -15747,7 +15747,11 @@ const upgrader = (data) => ({
         return false;
     },
     target: creep => {
-        if (creep.upgradeController(Game.getObjectById(data.targetId)) == ERR_NOT_ENOUGH_ENERGY) {
+        let target = Game.getObjectById(creep.memory.targetId);
+        if (creep.upgradeController(target) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+        if (creep.upgradeController(target) == ERR_NOT_ENOUGH_ENERGY) {
             return true;
         }
         return false;
