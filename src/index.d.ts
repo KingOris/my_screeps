@@ -15,12 +15,12 @@ interface CreepMemory {
     /**
      * 目标缓存
      */
-    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id']
+    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id'] | StructureController['id']
 
     /**
      * 资源目标
      */
-    sourceId?: Source["id"]
+    sourceId?: Source["id"] | StructureContainer['id'] | StructureStorage['id']
 
     /**
      * 建造目标
@@ -35,7 +35,6 @@ interface CreepMemory {
      * 保存数据
      */
     data?: CreepData
-
     /**
      * 是否在工作状态
      */
@@ -52,7 +51,7 @@ declare module NodeJS {
 
 type CreepRoleName = CoreRoles
 
-type CoreRoles = 'harvester' //| 'builder' | 'carrier' | 'upgrader' | 'repairer'
+type CoreRoles = 'harvester' | 'upgrader' //| 'builder' | 'carrier' | 'repairer'
 
 interface CreepApi {
     //creep的准备阶段
@@ -67,11 +66,28 @@ interface CreepApi {
 }
 
 
-type CreepData = HarvesterData
+type CreepData = HarvesterData | UpgraderData
 
 interface HarvesterData {
     //
-    sourceId: string
+    sourceId: Source["id"]
     //
-    targetId: string
+    targetId: Source['id'] | StructureContainer['id'] | ConstructionSite['id']
+}
+
+interface UpgraderData {
+    //
+    sourceId: StructureContainer['id'] | StructureStorage['id']
+    //Controller
+    targetId: StructureController['id']
+}
+
+interface Memory {
+    creepConfigs: {
+        [creepName:string]:{
+            role: CreepRoleName
+            data: CreepData
+            spawnRoom:string
+        }
+    }
 }

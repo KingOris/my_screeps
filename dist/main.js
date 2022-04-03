@@ -15595,7 +15595,7 @@ var lodash = {exports: {}};
 /**
  * 采集者配置器
  * 从指定 source 中获取能量 > 将能量存放到身下的 container 中
- * @param data
+ * @param data CreepData
  * @returns
  */
 const harvester = (data) => ({
@@ -15603,10 +15603,11 @@ const harvester = (data) => ({
         let target = null;
         //如果有目标缓存就直接使用
         if (creep.memory.targetId) {
-            target = Game.getObjectById(creep.memory.targetId);
+            target = Game.getObjectById(data.targetId);
         }
         //获得资源目标
-        const source = Game.getObjectById(creep.memory.sourceId);
+        //const source = Game.getObjectById<Source>(creep.memory.sourceId)
+        const source = Game.getObjectById(data.sourceId);
         //如果资源目标获取失败 返回false
         if (lodash.exports.isNull(source)) {
             console.log(`creep ${creep.name} 携带了一个无效的sourceID ${creep.memory.sourceId}`);
@@ -15695,11 +15696,67 @@ const harvester = (data) => ({
 });
 
 /**
+ * 升级者
+ * source: 从指定矿中挖矿
+ * target: 将其转移到指定的 roomController 中
+ *
+ * @param data creepData
+ */
+const upgrader = (data) => ({
+    prepare: creep => {
+        if (creep.memory.targetId && creep.memory.sourceId) {
+            Game.getObjectById(data.targetId);
+            Game.getObjectById(data.sourceId);
+            return true;
+        }
+        if (!creep.memory.targetId) {
+            creep.memory.targetId = creep.room.controller['id'];
+        }
+        //配置能量获取地点-sourceId
+        //获取所有存贮energy的建筑
+        const containersWithEnergy = creep.room.find(FIND_STRUCTURES, {
+            filter: (i) => i.store[RESOURCE_ENERGY] > 0
+        });
+        if (containersWithEnergy) {
+            for (let i of containersWithEnergy) {
+                if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500) {
+                    creep.memory.sourceId = i.id;
+                }
+                if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10) {
+                    creep.memory.sourceId = i.id;
+                }
+            }
+        }
+        return false;
+    },
+    source: creep => {
+        if (creep.store[RESOURCE_ENERGY] > 0) {
+            return true;
+        }
+        let sourceStructure = Game.getObjectById(data.sourceId);
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+            creep.suicide();
+        }
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(sourceStructure);
+        }
+        return false;
+    },
+    target: creep => {
+        if (creep.upgradeController(Game.getObjectById(data.targetId)) == ERR_NOT_ENOUGH_ENERGY) {
+            return true;
+        }
+        return false;
+    }
+});
+
+/**
  * 引入 creep 配置项
  * 其键为角色名（role），其值为对应角色的逻辑生成函数
  */
 const roles = {
-    'harvester': harvester
+    'harvester': harvester,
+    'upgrader': upgrader
 };
 class CreepExtension extends Creep {
     /*
