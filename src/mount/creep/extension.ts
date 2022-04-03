@@ -15,7 +15,7 @@ export class CreepExtension extends Creep {
     */
     public work():void{
 
-        const workConfig: CreepApi = roles['harvester'](this.memory.data!)
+        const workConfig: CreepApi = roles[this.memory.role](this.memory.data!)
 
         if(!this.memory.ready){
             if(workConfig.prepare){

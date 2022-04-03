@@ -5,7 +5,7 @@
  * 
  * @param data creepData
  */
-const upgrader = (data:UpgraderData) : CreepApi => ({
+const upgrader = (data:CreepData) : CreepApi => ({
     prepare: creep => {
 
         let target: StructureController
