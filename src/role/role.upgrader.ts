@@ -39,6 +39,9 @@ const upgrader = (data:CreepData) : CreepApi => ({
                     creep.memory.sourceId = i.id
                 }
             }
+        }else{
+            creep.say('我是傻x')
+            creep.suicide()
         }
 
         return false

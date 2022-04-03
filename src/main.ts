@@ -17,7 +17,7 @@ export const loop = errorMapper(() => {
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
 
     //自动生成harvester
-    if(harvesters.length < 3){
+    if(harvesters.length < 2){
         var newName = 'Harvester' + Game.time
         if(Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, {memory: {role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id']}}) == 0){
             console.log('Spawning new Harvester: ' + newName);

@@ -19,12 +19,12 @@ const harvester = (data: CreepData): CreepApi => ({
 
         //如果有目标缓存就直接使用
         if (creep.memory.targetId) {
-            target = Game.getObjectById< Source | StructureContainer >(data.targetId)
+            target = Game.getObjectById< Source | StructureContainer >(creep.memory.targetId)
         }
 
         //获得资源目标
-        //const source = Game.getObjectById<Source>(creep.memory.sourceId)
-        const source = Game.getObjectById<Source>(data.sourceId)
+        const source = Game.getObjectById<Source>(creep.memory.sourceId!)
+        //const source = Game.getObjectById<Source>(data.sourceId)
 
         //如果资源目标获取失败 返回false
         if(isNull(source)){

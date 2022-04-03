@@ -15603,11 +15603,11 @@ const harvester = (data) => ({
         let target = null;
         //如果有目标缓存就直接使用
         if (creep.memory.targetId) {
-            target = Game.getObjectById(data.targetId);
+            target = Game.getObjectById(creep.memory.targetId);
         }
         //获得资源目标
-        //const source = Game.getObjectById<Source>(creep.memory.sourceId)
-        const source = Game.getObjectById(data.sourceId);
+        const source = Game.getObjectById(creep.memory.sourceId);
+        //const source = Game.getObjectById<Source>(data.sourceId)
         //如果资源目标获取失败 返回false
         if (lodash.exports.isNull(source)) {
             console.log(`creep ${creep.name} 携带了一个无效的sourceID ${creep.memory.sourceId}`);
@@ -15727,6 +15727,10 @@ const upgrader = (data) => ({
                 }
             }
         }
+        else {
+            creep.say('我是傻x');
+            creep.suicide();
+        }
         return false;
     },
     source: creep => {
@@ -15834,7 +15838,7 @@ const loop = errorMapper(() => {
     //监测harvesters的数量
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     //自动生成harvester
-    if (harvesters.length < 3) {
+    if (harvesters.length < 2) {
         var newName = 'Harvester' + Game.time;
         if (Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, { memory: { role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id'] } }) == 0) {
             console.log('Spawning new Harvester: ' + newName);
