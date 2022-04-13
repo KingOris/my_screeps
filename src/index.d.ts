@@ -1,6 +1,12 @@
 interface Creep{
     work(): void
 }
+
+interface Room{
+    addCreepApi(creepNames:string,role:CreepRoleName,data:CreepData,spawnRoom:string,bodys:string[]): void
+    removeCreepApi(configName: string): void
+    roomInitial(): void
+}
 interface CreepMemory {
     /**
      * creep role
@@ -72,22 +78,25 @@ interface HarvesterData {
     //
     sourceId: Source["id"]
     //
-    targetId: Source['id'] | StructureContainer['id'] | ConstructionSite['id']
+    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id']
 }
 
 interface UpgraderData {
     //
     sourceId: StructureContainer['id'] | StructureStorage['id']
     //Controller
-    targetId: StructureController['id']
+    targetId?: StructureController['id']
 }
 
-interface Memory {
+interface RoomMemory {
     creepConfigs: {
         [creepName:string]:{
-            role: CreepRoleName
-            data: CreepData
-            spawnRoom:string
+            role: CreepRoleName,
+            data: CreepData,
+            spawnRoom:string,
+            bodys:string[]
         }
     }
+
+    initial?:boolean
 }

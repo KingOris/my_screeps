@@ -15819,12 +15819,61 @@ var mountCreep = () => {
     assignPrototype(Creep, CreepExtension);
 };
 
+/*
+Room 拓展
+*/
+class RoomExtention extends Room {
+    /**
+     * 添加CreepApi到房间内存中
+     * @param creepNames 名称
+     * @param role 职位
+     * @param data 需要creep储存的数据（目标，地点等等）
+     * @param spawnRoom 房间id
+     * @param bodys 需要孵化的身体部件
+     */
+    addCreepApi(creepNames, role, data, spawnRoom, bodys) {
+        //如果没有就生成一个空的
+        if (!this.memory.creepConfigs) {
+            this.memory.creepConfigs = {};
+        }
+        //加入内存
+        this.memory.creepConfigs[creepNames] = { role, data, spawnRoom, bodys };
+    }
+    /**
+     * 删除CreepApi
+     * @param configName api的名字
+     */
+    removeCreepApi(configName) {
+        delete this.memory.creepConfigs[configName];
+        //提醒api已经删除
+        console.log('${configName} has been removed');
+    }
+    createHaversterApi() {
+        const energy_sources = this.find(FIND_SOURCES);
+        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id, 'harvester', { sourceId: source.id }, this.name, ['work', 'carry', 'move']));
+    }
+    /**
+     * 房间内存初始化
+     */
+    roomInitial() {
+        if (!this.memory.initial) {
+            this.createHaversterApi();
+            this.memory.initial = true;
+        }
+    }
+}
+
+var mountRoom = () => {
+    assignPrototype(Room, RoomExtention);
+};
+
 /**
  * 挂载所有属性和方法
  */
 function mountwork () {
     if (!global.hasExtension) {
         mountCreep();
+        mountRoom();
         global.hasExtension = true;
         console.log('[mount] reload all extentions');
     }
@@ -15841,10 +15890,11 @@ const loop = errorMapper(() => {
     }
     //监测harvesters的数量
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
+    Game.spawns['Spawn1'].room.roomInitial();
     //自动生成harvester
     if (harvesters.length < 2) {
         var newName = 'Harvester' + Game.time;
-        if (Game.spawns['Spawn1'].spawnCreep([WORK, CARRY, MOVE], newName, { memory: { role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id'] } }) == 0) {
+        if (Game.spawns['Spawn1'].spawnCreep(['work', CARRY, MOVE], newName, { memory: { role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id'] } }) == 0) {
             console.log('Spawning new Harvester: ' + newName);
         }
     }
