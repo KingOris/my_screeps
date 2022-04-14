@@ -3,9 +3,11 @@ interface Creep{
 }
 
 interface Room{
-    addCreepApi(creepNames:string,role:CreepRoleName,data:CreepData,spawnRoom:string,bodys:string[]): void
+    addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:string[],data?:CreepData): void
     removeCreepApi(configName: string): void
     roomInitial(): void
+    checkMemory():void
+    doing(): void
 }
 interface CreepMemory {
     /**
@@ -92,7 +94,7 @@ interface RoomMemory {
     creepConfigs: {
         [creepName:string]:{
             role: CreepRoleName,
-            data: CreepData,
+            data?: CreepData,
             spawnRoom:string,
             bodys:string[]
         }

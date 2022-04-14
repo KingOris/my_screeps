@@ -15587,16 +15587,15 @@ var lodash = {exports: {}};
 }(lodash, lodash.exports));
 
 /**
- * 采集者（havester) 是爬爬帝国中最基础也是最重要的存在。他们回去收集对于帝国的运营最为重要的资源。
- * 采集者们的选拔非常严格，这些爬必须具有非凡的耐心和任劳任怨的品质。他们中的大部分终其一生也不会有返回母体的机会。
- * 采集者们采用的是传承制度，只有一个阿爬退休，才会由母体制造出新的阿爬来继承职位。
+ * 采集者（havester) 是爬爬帝国中最基础也是最重要的存在。他们回去收集对于帝国的运营最为重要的资源--energy。
+ * 采集者们的选拔非常严格，这些爬必须具有非凡的耐心和任劳任怨的品质。他们中的大部分终其一生也不会有返回城市的机会。
+ * 采集者们采用的是传承制度，只有一个阿爬临近死亡，才会由母体制造出新的阿爬来继承职位。
  * 这导致了通常一个房间不会有超过十个采集者同时存在。
  */
 /**
  * 采集者配置器
  * 从指定 source 中获取能量 > 将能量存放到身下的 container 中
  * @param data CreepData
- * @returns
  */
 const harvester = (data) => ({
     prepare: creep => {
@@ -15696,8 +15695,14 @@ const harvester = (data) => ({
 });
 
 /**
- * 升级者
- * source: 从指定矿中挖矿
+ * 升级者（upgrader)是每一个爬爬帝国下属城市中必不可少的存在。
+ * 这些阿爬被赋予了神圣及不可忽视的责任，为了维护一个城镇的基石--控制器（Controller）。
+ * 他们的一生都在维护控制器和去维护控制器的路上，并且为了守卫控制器的秘密并且更好的保护城镇，
+ * 只有上一辈的阿爬死掉，下一辈的阿爬才能继承他的位置，而且每个城镇只会有一只阿爬被赋予这个神圣的使命。
+ */
+/**
+ * 升级者配置器 从建筑中获取能量并升级Controller
+ * source: 从指定建筑中获取能量
  * target: 将其转移到指定的 roomController 中
  *
  * @param data creepData
@@ -15729,7 +15734,7 @@ const upgrader = (data) => ({
         }
         else {
             creep.say('我是傻x');
-            //creep.suicide()
+            creep.suicide();
         }
         return false;
     },
@@ -15831,13 +15836,13 @@ class RoomExtention extends Room {
      * @param spawnRoom 房间id
      * @param bodys 需要孵化的身体部件
      */
-    addCreepApi(creepNames, role, data, spawnRoom, bodys) {
+    addCreepApi(creepNames, role, spawnRoom, bodys, data) {
         //如果没有就生成一个空的
         if (!this.memory.creepConfigs) {
             this.memory.creepConfigs = {};
         }
         //加入内存
-        this.memory.creepConfigs[creepNames] = { role, data, spawnRoom, bodys };
+        this.memory.creepConfigs[creepNames] = { role, spawnRoom, bodys, data };
     }
     /**
      * 删除CreepApi
@@ -15848,9 +15853,18 @@ class RoomExtention extends Room {
         //提醒api已经删除
         console.log('${configName} has been removed');
     }
+    /**
+     * 生成HaversterApi
+     */
     createHaversterApi() {
         const energy_sources = this.find(FIND_SOURCES);
-        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id, 'harvester', { sourceId: source.id }, this.name, ['work', 'carry', 'move']));
+        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id, 'harvester', this.name, ['work', 'carry', 'move'], { sourceId: source.id }));
+    }
+    /**
+     * 生成upgraderApi
+     */
+    createUpgraderApi() {
+        this.addCreepApi('Upgrader', 'upgrader', this.name, ['work', 'carry', 'move']);
     }
     /**
      * 房间内存初始化
@@ -15858,8 +15872,19 @@ class RoomExtention extends Room {
     roomInitial() {
         if (!this.memory.initial) {
             this.createHaversterApi();
+            this.createUpgraderApi();
             this.memory.initial = true;
         }
+    }
+    /**
+     * 内存检查 删掉不需要内存
+     */
+    checkMemory() {
+    }
+    /**
+     * 房间工作整合
+     */
+    doing() {
     }
 }
 
@@ -15890,7 +15915,9 @@ const loop = errorMapper(() => {
     }
     //监测harvesters的数量
     var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-    Game.spawns['Spawn1'].room.roomInitial();
+    if (!Game.spawns['Spawn1'].room.memory.initial) {
+        Game.spawns['Spawn1'].room.roomInitial();
+    }
     //自动生成harvester
     if (harvesters.length < 2) {
         var newName = 'Harvester' + Game.time;

@@ -10,13 +10,13 @@ export class RoomExtention extends Room{
      * @param spawnRoom 房间id
      * @param bodys 需要孵化的身体部件
      */
-    public addCreepApi(creepNames:string,role:CreepRoleName,data:CreepData,spawnRoom:string,bodys:string[]):void{
+    public addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:string[],data?:CreepData):void{
         //如果没有就生成一个空的
         if(!this.memory.creepConfigs){
             this.memory.creepConfigs = {}
         }
         //加入内存
-        this.memory.creepConfigs[creepNames] = {role,data,spawnRoom,bodys}
+        this.memory.creepConfigs[creepNames] = {role,spawnRoom,bodys,data}
     }
 
     /**
@@ -29,9 +29,19 @@ export class RoomExtention extends Room{
         console.log('${configName} has been removed')
     }
 
+    /**
+     * 生成HaversterApi
+     */
     private createHaversterApi():void{
         const energy_sources = this.find(FIND_SOURCES)
-        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id,'harvester',{sourceId : source.id},this.name,['work','carry','move']))
+        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id,'harvester',this.name,['work','carry','move'],{sourceId : source.id}))
+    }
+
+    /**
+     * 生成upgraderApi
+     */
+    private createUpgraderApi():void{
+        this.addCreepApi('Upgrader','upgrader',this.name,['work','carry','move'])
     }
 
     /**
@@ -40,7 +50,22 @@ export class RoomExtention extends Room{
     public roomInitial():void{
         if(!this.memory.initial){
             this.createHaversterApi()
+            this.createUpgraderApi()
             this.memory.initial = true
         }
+    }
+
+    /**
+     * 内存检查 删掉不需要内存
+     */
+    public checkMemory(): void {
+        
+    }
+    
+    /**
+     * 房间工作整合
+     */
+    public doing():void{
+
     }
 }

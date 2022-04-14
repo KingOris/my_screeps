@@ -1,6 +1,13 @@
 /**
- * 升级者
- * source: 从指定矿中挖矿
+ * 升级者（upgrader)是每一个爬爬帝国下属城市中必不可少的存在。
+ * 这些阿爬被赋予了神圣及不可忽视的责任，为了维护一个城镇的基石--控制器（Controller）。
+ * 他们的一生都在维护控制器和去维护控制器的路上，并且为了守卫控制器的秘密并且更好的保护城镇，
+ * 只有上一辈的阿爬死掉，下一辈的阿爬才能继承他的位置，而且每个城镇只会有一只阿爬被赋予这个神圣的使命。
+ */
+
+/**
+ * 升级者配置器 从建筑中获取能量并升级Controller
+ * source: 从指定建筑中获取能量
  * target: 将其转移到指定的 roomController 中
  * 
  * @param data creepData
@@ -41,7 +48,7 @@ const upgrader = (data:CreepData) : CreepApi => ({
             }
         }else{
             creep.say('我是傻x')
-            //creep.suicide()
+            creep.suicide()
         }
 
         return false
