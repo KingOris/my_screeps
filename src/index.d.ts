@@ -90,15 +90,3 @@ interface UpgraderData {
     targetId?: StructureController['id']
 }
 
-interface RoomMemory {
-    creepConfigs: {
-        [creepName:string]:{
-            role: CreepRoleName,
-            data?: CreepData,
-            spawnRoom:string,
-            bodys:string[]
-        }
-    }
-
-    initial?:boolean
-}
