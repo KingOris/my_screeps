@@ -15590,7 +15590,7 @@ var lodash = {exports: {}};
  * 采集者（havester) 是爬爬帝国中最基础也是最重要的存在。他们回去收集对于帝国的运营最为重要的资源--energy。
  * 采集者们的选拔非常严格，这些爬必须具有非凡的耐心和任劳任怨的品质。他们中的大部分终其一生也不会有返回城市的机会。
  * 采集者们采用的是传承制度，只有一个阿爬临近死亡，才会由母体制造出新的阿爬来继承职位。
- * 这导致了通常一个房间不会有超过十个采集者同时存在。
+ * 这导致了通常一个房间不会有超过五个采集者同时存在。
  */
 /**
  * 采集者配置器
@@ -15842,7 +15842,7 @@ class RoomExtention extends Room {
             this.memory.creepConfigs = {};
         }
         //加入内存
-        this.memory.creepConfigs[creepNames] = { role, spawnRoom, bodys, data };
+        this.memory.creepConfigs[creepNames] = { role, spawnRoom, bodys, data, inList: false };
     }
     /**
      * 删除CreepApi
@@ -15877,19 +15877,84 @@ class RoomExtention extends Room {
         }
     }
     /**
-     * 内存检查 删掉不需要内存
+     * creep生成函数
+     * @param name creep名称/Api名称
+     */
+    spawnMission(name) {
+        const return_code = this.find(FIND_MY_SPAWNS)[0].addTask(name);
+        this.memory.creepConfigs[name].inList = true;
+        console.log('Spawn mission add: ' + return_code + ' mission in the list');
+    }
+    /**
+     * 内存检查 并发布孵化任务
      */
     checkMemory() {
+        const creeps = this.find(FIND_MY_CREEPS);
+        for (var config in this.memory.creepConfigs) {
+            if (!_.find(creeps, creep => creep.name == config) && !this.memory.creepConfigs[config].inList) {
+                if (!Game.creeps[config].spawning) {
+                    this.spawnMission(config);
+                }
+            }
+        }
     }
     /**
      * 房间工作整合
      */
     doing() {
+        this.roomInitial();
+        this.checkMemory();
     }
 }
 
 var mountRoom = () => {
     assignPrototype(Room, RoomExtention);
+};
+
+class SpawnExtension extends StructureSpawn {
+    work() {
+        this.spawnInitial();
+        if (this.spawning || !this.memory.spawnList || this.memory.spawnList.length == 0) {
+            return;
+        }
+        const task_name = this.memory.spawnList[0];
+        const spawn_code = this.doSpawn(task_name);
+        if (spawn_code == 0) {
+            this.memory.spawnList.shift();
+            this.room.memory.creepConfigs[task_name].inList = false;
+        }
+        else {
+            console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code);
+        }
+    }
+    addTask(taskName) {
+        if (!this.memory.spawnList) {
+            this.memory.spawnList = [];
+        }
+        this.memory.spawnList.push(taskName);
+        return this.memory.spawnList.length;
+    }
+    doSpawn(taskName) {
+        var _a, _b;
+        const creep_config = this.room.memory.creepConfigs[taskName];
+        const source = (_a = creep_config.data) === null || _a === void 0 ? void 0 : _a.sourceId;
+        const target = (_b = creep_config.data) === null || _b === void 0 ? void 0 : _b.targetId;
+        const return_code = this.spawnCreep(creep_config.bodys, taskName, { memory: { role: creep_config.role, ready: false, building: false, targetId: target, sourceId: source } });
+        return return_code;
+    }
+    /**
+     * Spawn内存初始化
+     */
+    spawnInitial() {
+        if (!this.memory.initial) {
+            this.memory.spawnList = [];
+            this.memory.initial = true;
+        }
+    }
+}
+
+var mountSpawn = () => {
+    assignPrototype(Spawn, SpawnExtension);
 };
 
 /**
@@ -15899,6 +15964,7 @@ function mountwork () {
     if (!global.hasExtension) {
         mountCreep();
         mountRoom();
+        mountSpawn();
         global.hasExtension = true;
         console.log('[mount] reload all extentions');
     }
@@ -15913,18 +15979,14 @@ const loop = errorMapper(() => {
             console.log('Clearing non-existing creep memeory', name);
         }
     }
-    //监测harvesters的数量
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
     if (!Game.spawns['Spawn1'].room.memory.initial) {
         Game.spawns['Spawn1'].room.roomInitial();
     }
-    //自动生成harvester
-    if (harvesters.length < 2) {
-        var newName = 'Harvester' + Game.time;
-        if (Game.spawns['Spawn1'].spawnCreep(['work', CARRY, MOVE], newName, { memory: { role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id'] } }) == 0) {
-            console.log('Spawning new Harvester: ' + newName);
-        }
+    if (!Game.spawns['Spawn1'].room.memory.initial) {
+        Game.spawns['Spawn1'].spawnInitial();
     }
+    Object.values(Game.rooms).forEach(room => room.doing());
+    Object.values(Game.spawns).forEach(spawn => spawn.work());
     Object.values(Game.creeps).forEach(creep => creep.work());
 });
 

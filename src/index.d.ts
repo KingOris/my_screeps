@@ -2,13 +2,6 @@ interface Creep{
     work(): void
 }
 
-interface Room{
-    addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:string[],data?:CreepData): void
-    removeCreepApi(configName: string): void
-    roomInitial(): void
-    checkMemory():void
-    doing(): void
-}
 interface CreepMemory {
     /**
      * creep role
@@ -47,6 +40,41 @@ interface CreepMemory {
      * 是否在工作状态
      */
     working?: boolean
+}
+
+interface Room{
+    addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyPartConstant[],data?:CreepData): void
+    removeCreepApi(configName: string): void
+    roomInitial(): void
+    spawnMission(name:string): void
+    checkMemory():void
+    doing(): void
+}
+
+interface RoomMemory {
+    creepConfigs: {
+        [creepName:string]:{
+            role: CreepRoleName,
+            data?: CreepData,
+            spawnRoom:string,
+            bodys:BodyPartConstant[]
+            inList?:boolean
+        }
+    }
+
+    initial?:boolean
+}
+
+interface StructureSpawn{
+    work(): void
+    addTask(taskName:string): number
+    doSpawn(taskName:string): ScreepsReturnCode
+    spawnInitial():void
+}
+
+interface SpawnMemory{
+    spawnList: Array<string>
+    initial:boolean
 }
 
 declare module NodeJS {

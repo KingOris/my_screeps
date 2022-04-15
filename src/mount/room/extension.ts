@@ -1,3 +1,4 @@
+
 /*
 Room 拓展
 */
@@ -10,13 +11,13 @@ export class RoomExtention extends Room{
      * @param spawnRoom 房间id
      * @param bodys 需要孵化的身体部件
      */
-    public addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:string[],data?:CreepData):void{
+    public addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyPartConstant[],data?:CreepData):void{
         //如果没有就生成一个空的
         if(!this.memory.creepConfigs){
             this.memory.creepConfigs = {}
         }
         //加入内存
-        this.memory.creepConfigs[creepNames] = {role,spawnRoom,bodys,data}
+        this.memory.creepConfigs[creepNames] = {role,spawnRoom,bodys,data,inList:false}
     }
 
     /**
@@ -51,21 +52,41 @@ export class RoomExtention extends Room{
         if(!this.memory.initial){
             this.createHaversterApi()
             this.createUpgraderApi()
+            
             this.memory.initial = true
         }
     }
 
     /**
-     * 内存检查 删掉不需要内存
+     * creep生成函数
+     * @param name creep名称/Api名称
+     */
+    public spawnMission(name:string):void{
+        const return_code = this.find(FIND_MY_SPAWNS)[0].addTask(name)
+        this.memory.creepConfigs[name].inList = true
+        console.log('Spawn mission add: ' + return_code +' mission in the list')
+    }
+
+    /**
+     * 内存检查 并发布孵化任务
      */
     public checkMemory(): void {
-        
+        const creeps = this.find(FIND_MY_CREEPS)
+        for(var config in this.memory.creepConfigs){
+            if(!_.find(creeps,creep => creep.name == config) && !this.memory.creepConfigs[config].inList){
+                if(!Game.creeps[config].spawning){
+                    this.spawnMission(config)
+                }
+            }
+        }
+            
     }
-    
+
     /**
      * 房间工作整合
      */
     public doing():void{
-
+        this.roomInitial()
+        this.checkMemory()
     }
 }

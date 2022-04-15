@@ -13,19 +13,15 @@ export const loop = errorMapper(() => {
         }
     }
 
-    //监测harvesters的数量
-    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
-
     if(!Game.spawns['Spawn1'].room.memory.initial){
         Game.spawns['Spawn1'].room.roomInitial()
     }
-    //自动生成harvester
-    if(harvesters.length < 2){
-        var newName = 'Harvester' + Game.time
-        if(Game.spawns['Spawn1'].spawnCreep(['work',CARRY,MOVE], newName, {memory: {role: 'harvester', building: false, ready: false, sourceId: Game.spawns['Spawn1'].room.find(FIND_SOURCES)[0]['id']}}) == 0){
-            console.log('Spawning new Harvester: ' + newName);
-        }
-    }
 
+    if(!Game.spawns['Spawn1'].room.memory.initial){
+        Game.spawns['Spawn1'].spawnInitial()
+    }
+    
+    Object.values(Game.rooms).forEach(room => room.doing())
+    Object.values(Game.spawns).forEach(spawn => spawn.work())
     Object.values(Game.creeps).forEach(creep => creep.work())
 })
