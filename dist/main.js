@@ -15733,8 +15733,12 @@ const upgrader = (data) => ({
             }
         }
         else {
-            creep.say('我是傻x');
-            creep.suicide();
+            if (!creep.saying) {
+                creep.say('我是傻x');
+            }
+            else {
+                creep.suicide();
+            }
         }
         return false;
     },
@@ -15892,7 +15896,7 @@ class RoomExtention extends Room {
         const creeps = this.find(FIND_MY_CREEPS);
         for (var config in this.memory.creepConfigs) {
             if (!_.find(creeps, creep => creep.name == config) && !this.memory.creepConfigs[config].inList) {
-                if (!Game.creeps[config].spawning) {
+                if (!Game.creeps[config] || !Memory.creeps[config]) {
                     this.spawnMission(config);
                 }
             }
@@ -15926,6 +15930,20 @@ class SpawnExtension extends StructureSpawn {
         else {
             console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code);
         }
+        this.checkSpawnTask();
+    }
+    checkSpawnTask() {
+        for (var config in this.room.memory.creepConfigs) {
+            if (!this.hasSpawnTask(config) && this.room.memory.creepConfigs[config].inList) {
+                this.room.memory.creepConfigs[config].inList = false;
+            }
+            if (this.hasSpawnTask(config) && !this.room.memory.creepConfigs[config].inList) {
+                this.room.memory.creepConfigs[config].inList = true;
+            }
+        }
+    }
+    hasSpawnTask(task_name) {
+        return this.memory.spawnList.indexOf(task_name) > -1;
     }
     addTask(taskName) {
         if (!this.memory.spawnList) {
@@ -15984,6 +16002,9 @@ const loop = errorMapper(() => {
     }
     if (!Game.spawns['Spawn1'].room.memory.initial) {
         Game.spawns['Spawn1'].spawnInitial();
+    }
+    if (Game.cpu.bucket >= 10000) {
+        Game.cpu.generatePixel();
     }
     Object.values(Game.rooms).forEach(room => room.doing());
     Object.values(Game.spawns).forEach(spawn => spawn.work());

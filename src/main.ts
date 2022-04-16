@@ -21,6 +21,10 @@ export const loop = errorMapper(() => {
         Game.spawns['Spawn1'].spawnInitial()
     }
     
+    if(Game.cpu.bucket >= 10000){
+        Game.cpu.generatePixel()
+    }
+    
     Object.values(Game.rooms).forEach(room => room.doing())
     Object.values(Game.spawns).forEach(spawn => spawn.work())
     Object.values(Game.creeps).forEach(creep => creep.work())

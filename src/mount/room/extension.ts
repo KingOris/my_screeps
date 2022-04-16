@@ -74,7 +74,7 @@ export class RoomExtention extends Room{
         const creeps = this.find(FIND_MY_CREEPS)
         for(var config in this.memory.creepConfigs){
             if(!_.find(creeps,creep => creep.name == config) && !this.memory.creepConfigs[config].inList){
-                if(!Game.creeps[config].spawning){
+                if(!Game.creeps[config] || !Memory.creeps[config]){
                     this.spawnMission(config)
                 }
             }

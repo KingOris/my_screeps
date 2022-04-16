@@ -9,13 +9,31 @@ export class SpawnExtension extends StructureSpawn {
 
         const task_name = this.memory.spawnList[0]
         const spawn_code = this.doSpawn(task_name)
-        
+
         if(spawn_code == 0){
             this.memory.spawnList.shift()
-            this.room.memory.creepConfigs[task_name].inList =false
+            this.room.memory.creepConfigs[task_name].inList = false
         }else{
             console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code)
         }
+
+        this.checkSpawnTask()
+    }
+
+    private checkSpawnTask():void{
+        for(var config in this.room.memory.creepConfigs){
+            if(!this.hasSpawnTask(config) && this.room.memory.creepConfigs[config].inList){
+                this.room.memory.creepConfigs[config].inList = false
+            }
+
+            if(this.hasSpawnTask(config) && !this.room.memory.creepConfigs[config].inList){
+                this.room.memory.creepConfigs[config].inList = true
+            }
+        }
+    }
+
+    private hasSpawnTask(task_name:string):boolean{
+        return this.memory.spawnList.indexOf(task_name) > -1 
     }
 
     public addTask(taskName:string): number{

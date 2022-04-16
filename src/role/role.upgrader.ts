@@ -47,8 +47,11 @@ const upgrader = (data:CreepData) : CreepApi => ({
                 }
             }
         }else{
-            creep.say('我是傻x')
-            creep.suicide()
+            if(!creep.saying){
+                creep.say('我是傻x')
+            }else{
+                creep.suicide()
+            }
         }
 
         return false
