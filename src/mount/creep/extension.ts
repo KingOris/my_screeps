@@ -1,3 +1,4 @@
+import builder from "src/role/role.builder";
 import harvester from "src/role/role.harvester";
 import upgrader from "src/role/role.upgrader";
 /**
@@ -6,7 +7,8 @@ import upgrader from "src/role/role.upgrader";
  */
  const roles = {
     'harvester': harvester,
-    'upgrader': upgrader
+    'upgrader': upgrader,
+    'builder': builder
 }
 
 export class CreepExtension extends Creep {
@@ -46,5 +48,38 @@ export class CreepExtension extends Creep {
         if(stateChange){
             this.memory.working = !this.memory.working
         }
+    }
+
+    public setFillWallid():void{
+        const walls = this.room.find(FIND_STRUCTURES,{filter:(i)=>i.structureType == STRUCTURE_WALL || i.structureType == STRUCTURE_RAMPART})
+
+        if(walls.length){
+            for(let wall of walls){
+                if(wall.structureType == STRUCTURE_WALL){
+                    if(wall.hits < 1000000){
+                        this.memory.fillWallId = wall.id
+                    }
+                }else{
+                    if(wall.structureType == STRUCTURE_RAMPART){
+                        if(wall.hits < 1000000){
+                            this.memory.fillWallId = wall.id
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public steadyWall(): OK | ERR_NOT_FOUND {
+        const wall = Game.getObjectById<StructureWall | StructureRampart>(this.memory.fillWallId!)
+        if (!wall) return ERR_NOT_FOUND
+
+        if (wall.hits < 1000000) {
+            const result = this.repair(wall)
+            if (result == ERR_NOT_IN_RANGE) this.moveTo(wall.pos)
+        }
+        else delete this.memory.fillWallId
+
+        return OK
     }
 }

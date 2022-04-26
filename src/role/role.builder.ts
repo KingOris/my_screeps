@@ -1,31 +1,68 @@
-export const roleBuilder = {
-    /**@param {Creep} creep */
-    run: function(creep: Creep){
+import { filter } from "lodash";
+/**
+ * 
+ */
 
-        if(creep.memory.building && creep.store[RESOURCE_ENERGY] == 0){
-            creep.memory.building = false;
-            creep.say('🔄')
+const builder = (data:CreepData): CreepApi =>({
+    //没有就不需要孵化
+    isNeed: room =>{
+        const target = room.find(FIND_MY_CONSTRUCTION_SITES)
+        return target.length > 0 ? true : false
+    },
+
+    source: creep=>{
+        if(creep.store[RESOURCE_ENERGY] > 0){
+            return true
         }
 
-        if(!creep.memory.building && creep.store.getFreeCapacity() == 0){
-            creep.memory.building = true;
-            creep.say('🚧')
+        let sourceStructure: StructureStorage | StructureContainer | ERR_NOT_FOUND
+        if(!creep.memory.sourceId){
+            sourceStructure = creep.room.getAvaliblesource()
+            if(sourceStructure == ERR_NOT_FOUND){
+                creep.say('我傻了')
+                return false
+            }else{
+                creep.memory.sourceId = sourceStructure.id
+            }
+        }else{
+            sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
         }
 
-        if(creep.memory.building){
-            var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
-            if(targets.length){
-                if(creep.build(targets[0]) ==  ERR_NOT_IN_RANGE){
-                    creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
+        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
+            creep.say('你是我滴神')
+            delete creep.memory.sourceId
+        }
+
+        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){
+            creep.moveTo(sourceStructure,{visualizePathStyle: {stroke: '#ffffff'}})
+        }
+
+        return false
+    },
+
+    target: creep=>{
+        var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+        if(targets.length){
+            creep.memory.targetId = targets[0].id
+            if(creep.build(targets[0]) ==  ERR_NOT_IN_RANGE){
+                creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
+            }
+        }else{
+            creep.setFillWallid()
+            const result = creep.steadyWall()
+            if(result == ERR_NOT_FOUND){
+                if (creep.upgradeController(creep.room.controller!)== ERR_NOT_IN_RANGE){
+                    creep.moveTo(creep.room.controller!)
                 }
             }
-        }else {
-            var sources = creep.room.find(FIND_SOURCES);
-            if(creep.harvest(sources[0]) == ERR_NOT_IN_RANGE){
-                creep.moveTo(sources[0], {visualizePathStyle: {stroke: '#ffaa00'}});
-            }
         }
-    }
-}
 
-export default roleBuilder;
+        if(creep.store.getUsedCapacity() === 0 ){
+            return true
+        }
+
+        return false
+    }
+})
+
+export default builder;

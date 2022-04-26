@@ -1,5 +1,7 @@
 interface Creep{
     work(): void
+    steadyWall(): OK| ERR_NOT_FOUND 
+    setFillWallid():void
 }
 
 interface CreepMemory {
@@ -16,7 +18,7 @@ interface CreepMemory {
     /**
      * 目标缓存
      */
-    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id'] | StructureController['id']
+    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id'] | StructureController['id'] | ConstructionSite['id']
 
     /**
      * 资源目标
@@ -40,6 +42,8 @@ interface CreepMemory {
      * 是否在工作状态
      */
     working?: boolean
+
+    fillWallId?: StructureWall['id'] | StructureRampart['id']
 }
 
 interface Room{
@@ -48,6 +52,7 @@ interface Room{
     roomInitial(): void
     spawnMission(name:string): void
     checkMemory():void
+    getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND
     doing(): void
 }
 
@@ -87,9 +92,11 @@ declare module NodeJS {
 
 type CreepRoleName = CoreRoles
 
-type CoreRoles = 'harvester' | 'upgrader' //| 'builder' | 'carrier' | 'repairer'
+type CoreRoles = 'harvester' | 'upgrader' | 'builder' //| 'carrier' | 'repairer'
 
 interface CreepApi {
+    //检查房间是否需要
+    isNeed?:(room:Room) => boolean
     //creep的准备阶段
     //true：准备完成 并进入下一阶段
     prepare?: (creep: Creep) => boolean

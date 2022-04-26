@@ -31,27 +31,16 @@ const upgrader = (data:CreepData) : CreepApi => ({
 
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
-        const containersWithEnergy = creep.room.find(FIND_STRUCTURES, {
-            filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
-        })
-        
+        const avalible_source = creep.room.getAvaliblesource()
 
-        if (containersWithEnergy.length){
-            for (let i of containersWithEnergy){
-                if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500){
-                    creep.memory.sourceId = i.id
-                }
-
-                if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10){
-                    creep.memory.sourceId = i.id
-                }
-            }
-        }else{
+        if (avalible_source == ERR_NOT_FOUND){
             if(!creep.saying){
                 creep.say('我是傻x')
             }else{
                 creep.suicide()
             }
+        }else{
+            creep.memory.sourceId = avalible_source.id
         }
 
         return false
@@ -66,6 +55,7 @@ const upgrader = (data:CreepData) : CreepApi => ({
         let sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
 
         if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
+            creep.say('WDNMD',true)
             creep.suicide()
         }
 

@@ -3243,6 +3243,66 @@ var SourceMapConsumer = sourceMapConsumer.SourceMapConsumer;
      }
  };
 
+/**
+ *
+ */
+const builder = (data) => ({
+    //没有就不需要孵化
+    isNeed: room => {
+        const target = room.find(FIND_MY_CONSTRUCTION_SITES);
+        return target.length > 0 ? true : false;
+    },
+    source: creep => {
+        if (creep.store[RESOURCE_ENERGY] > 0) {
+            return true;
+        }
+        let sourceStructure;
+        if (!creep.memory.sourceId) {
+            sourceStructure = creep.room.getAvaliblesource();
+            if (sourceStructure == ERR_NOT_FOUND) {
+                creep.say('我傻了');
+                return false;
+            }
+            else {
+                creep.memory.sourceId = sourceStructure.id;
+            }
+        }
+        else {
+            sourceStructure = Game.getObjectById(creep.memory.sourceId);
+        }
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+            creep.say('你是我滴神');
+            delete creep.memory.sourceId;
+        }
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(sourceStructure, { visualizePathStyle: { stroke: '#ffffff' } });
+        }
+        return false;
+    },
+    target: creep => {
+        var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+        if (targets.length) {
+            creep.memory.targetId = targets[0].id;
+            if (creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
+            }
+        }
+        else {
+            creep.setFillWallid();
+            const result = creep.steadyWall();
+            if (result == ERR_NOT_FOUND) {
+                if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(creep.room.controller);
+                }
+            }
+        }
+        if (creep.store.getUsedCapacity() === 0) {
+            return true;
+        }
+        return false;
+    }
+});
+
 var lodash = {exports: {}};
 
 /**
@@ -15719,26 +15779,17 @@ const upgrader = (data) => ({
         }
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
-        const containersWithEnergy = creep.room.find(FIND_STRUCTURES, {
-            filter: (i) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
-        });
-        if (containersWithEnergy.length) {
-            for (let i of containersWithEnergy) {
-                if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500) {
-                    creep.memory.sourceId = i.id;
-                }
-                if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10) {
-                    creep.memory.sourceId = i.id;
-                }
-            }
-        }
-        else {
+        const avalible_source = creep.room.getAvaliblesource();
+        if (avalible_source == ERR_NOT_FOUND) {
             if (!creep.saying) {
                 creep.say('我是傻x');
             }
             else {
                 creep.suicide();
             }
+        }
+        else {
+            creep.memory.sourceId = avalible_source.id;
         }
         return false;
     },
@@ -15748,6 +15799,7 @@ const upgrader = (data) => ({
         }
         let sourceStructure = Game.getObjectById(creep.memory.sourceId);
         if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+            creep.say('WDNMD', true);
             creep.suicide();
         }
         if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -15773,7 +15825,8 @@ const upgrader = (data) => ({
  */
 const roles = {
     'harvester': harvester,
-    'upgrader': upgrader
+    'upgrader': upgrader,
+    'builder': builder
 };
 class CreepExtension extends Creep {
     /*
@@ -15807,6 +15860,38 @@ class CreepExtension extends Creep {
         if (stateChange) {
             this.memory.working = !this.memory.working;
         }
+    }
+    setFillWallid() {
+        const walls = this.room.find(FIND_STRUCTURES, { filter: (i) => i.structureType == STRUCTURE_WALL || i.structureType == STRUCTURE_RAMPART });
+        if (walls.length) {
+            for (let wall of walls) {
+                if (wall.structureType == STRUCTURE_WALL) {
+                    if (wall.hits < 1000000) {
+                        this.memory.fillWallId = wall.id;
+                    }
+                }
+                else {
+                    if (wall.structureType == STRUCTURE_RAMPART) {
+                        if (wall.hits < 1000000) {
+                            this.memory.fillWallId = wall.id;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    steadyWall() {
+        const wall = Game.getObjectById(this.memory.fillWallId);
+        if (!wall)
+            return ERR_NOT_FOUND;
+        if (wall.hits < 1000000) {
+            const result = this.repair(wall);
+            if (result == ERR_NOT_IN_RANGE)
+                this.moveTo(wall.pos);
+        }
+        else
+            delete this.memory.fillWallId;
+        return OK;
     }
 }
 
@@ -15862,13 +15947,40 @@ class RoomExtention extends Room {
      */
     createHaversterApi() {
         const energy_sources = this.find(FIND_SOURCES);
-        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id, 'harvester', this.name, ['work', 'carry', 'move'], { sourceId: source.id }));
+        energy_sources.forEach(source => this.energy_source_pos_check(source));
     }
     /**
      * 生成upgraderApi
      */
     createUpgraderApi() {
-        this.addCreepApi('Upgrader', 'upgrader', this.name, ['work', 'carry', 'move']);
+        this.addCreepApi('Upgrader1', 'upgrader', this.name, ['work', 'carry', 'move']);
+        this.addCreepApi('Upgrader2', 'upgrader', this.name, ['work', 'carry', 'move']);
+    }
+    /**
+     * 检查能量可采集位置数量
+     */
+    energy_source_pos_check(source) {
+        for (let i = 0; i <= this.pos_avail(source); i++) {
+            this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, ['work', 'carry', 'move'], { sourceId: source.id });
+        }
+    }
+    pos_avail(source) {
+        const pos = source.pos;
+        const x = pos.x;
+        const y = pos.y;
+        const position = this.check_pos(x + 1, y + 1) + this.check_pos(x - 1, y - 1) + this.check_pos(x + 1, y) + this.check_pos(x, y + 1) + this.check_pos(x - 1, y) + this.check_pos(x, y - 1);
+        console.log(position + source.id);
+        return position;
+    }
+    check_pos(x, y) {
+        switch (this.getTerrain().get(x, y)) {
+            case TERRAIN_MASK_WALL:
+                return 0;
+            case TERRAIN_MASK_SWAMP:
+                return 0;
+            case 0:
+                return 1;
+        }
     }
     /**
      * 房间内存初始化
@@ -15902,6 +16014,22 @@ class RoomExtention extends Room {
             }
         }
     }
+    getAvaliblesource() {
+        const containersWithEnergy = this.find(FIND_STRUCTURES, {
+            filter: (i) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
+        });
+        if (containersWithEnergy.length) {
+            for (let i of containersWithEnergy) {
+                if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500) {
+                    return i;
+                }
+                if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10) {
+                    return i;
+                }
+            }
+        }
+        return ERR_NOT_FOUND;
+    }
     /**
      * 房间工作整合
      */
@@ -15926,9 +16054,6 @@ class SpawnExtension extends StructureSpawn {
         if (spawn_code == 0) {
             this.memory.spawnList.shift();
             this.room.memory.creepConfigs[task_name].inList = false;
-        }
-        else {
-            console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code);
         }
         this.checkSpawnTask();
     }

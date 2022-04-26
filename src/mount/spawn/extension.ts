@@ -14,7 +14,7 @@ export class SpawnExtension extends StructureSpawn {
             this.memory.spawnList.shift()
             this.room.memory.creepConfigs[task_name].inList = false
         }else{
-            console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code)
+            //console.log('Spawn creep failed: ' + task_name + ' error_code' + spawn_code)
         }
 
         this.checkSpawnTask()

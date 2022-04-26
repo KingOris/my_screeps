@@ -35,20 +35,50 @@ export class RoomExtention extends Room{
      */
     private createHaversterApi():void{
         const energy_sources = this.find(FIND_SOURCES)
-        energy_sources.forEach(source => this.addCreepApi('Harvester' + source.id,'harvester',this.name,['work','carry','move'],{sourceId : source.id}))
+        energy_sources.forEach(source => this.energy_source_pos_check(source))
     }
 
     /**
      * 生成upgraderApi
      */
-    private createUpgraderApi():void{
-        this.addCreepApi('Upgrader','upgrader',this.name,['work','carry','move'])
+    private createUpgraderApi(): void{
+        this.addCreepApi('Upgrader1','upgrader',this.name,['work','carry','move'])
+        this.addCreepApi('Upgrader2','upgrader',this.name,['work','carry','move'])
     }
 
     /**
+     * 检查能量可采集位置数量
+     */
+    private energy_source_pos_check(source:Source): void{
+        for (let i = 0; i <= this.pos_avail(source); i++){
+            this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,['work','carry','move'],{sourceId : source.id})
+        }
+
+    }
+
+    private pos_avail(source:Source): number{
+        const pos = source.pos
+        const x = pos.x
+        const y = pos.y
+        const position = this.check_pos(x+1,y+1) + this.check_pos(x-1,y-1) + this.check_pos(x+1,y) + this.check_pos(x,y+1) + this.check_pos(x-1,y) + this.check_pos(x,y-1)
+        console.log(position + source.id)
+        return position
+    }
+
+    private check_pos(x:number,y:number): number{
+        switch(this.getTerrain().get(x,y)){
+            case TERRAIN_MASK_WALL:
+                return 0;
+            case TERRAIN_MASK_SWAMP:
+                return 0;
+            case 0:
+                return 1;
+        }
+    }
+    /**
      * 房间内存初始化
      */
-    public roomInitial():void{
+    public roomInitial(): void{
         if(!this.memory.initial){
             this.createHaversterApi()
             this.createUpgraderApi()
@@ -82,6 +112,26 @@ export class RoomExtention extends Room{
             
     }
 
+    public getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND{
+        const containersWithEnergy = this.find(FIND_STRUCTURES, {
+            filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
+        })
+        
+
+        if (containersWithEnergy.length){
+            for (let i of containersWithEnergy){
+                if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500){
+                    return i
+                }
+
+                if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10){
+                    return i
+                }
+            }
+        }
+
+        return ERR_NOT_FOUND
+    }
     /**
      * 房间工作整合
      */
