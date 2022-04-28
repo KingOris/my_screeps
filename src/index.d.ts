@@ -18,7 +18,7 @@ interface CreepMemory {
     /**
      * 目标缓存
      */
-    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id'] | StructureController['id'] | ConstructionSite['id']
+    targetId?: Source['id'] | StructureContainer['id'] | ConstructionSite['id'] | StructureController['id'] | ConstructionSite['id']| Structure['id']
 
     /**
      * 资源目标
@@ -53,6 +53,7 @@ interface Room{
     spawnMission(name:string): void
     checkMemory():void
     getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND
+    getRepairstructure():Structure | ERR_NOT_FOUND
     doing(): void
 }
 

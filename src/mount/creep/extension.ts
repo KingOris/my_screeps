@@ -1,6 +1,7 @@
 import builder from "src/role/role.builder";
 import harvester from "src/role/role.harvester";
 import upgrader from "src/role/role.upgrader";
+import repairer from "src/role/role.repairer";
 /**
  * 引入 creep 配置项
  * 其键为角色名（role），其值为对应角色的逻辑生成函数
@@ -8,7 +9,8 @@ import upgrader from "src/role/role.upgrader";
  const roles = {
     'harvester': harvester,
     'upgrader': upgrader,
-    'builder': builder
+    'builder': builder,
+    'repairer': repairer
 }
 
 export class CreepExtension extends Creep {
@@ -76,7 +78,7 @@ export class CreepExtension extends Creep {
 
         if (wall.hits < 1000000) {
             const result = this.repair(wall)
-            if (result == ERR_NOT_IN_RANGE) this.moveTo(wall.pos)
+            if (result == ERR_NOT_IN_RANGE) this.moveTo(wall.pos,{visualizePathStyle: {stroke:'#fa1125'}})
         }
         else delete this.memory.fillWallId
 

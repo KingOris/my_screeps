@@ -15820,13 +15820,69 @@ const upgrader = (data) => ({
 });
 
 /**
+ * 维修者
+ */
+const repairer = (data) => ({
+    source: creep => {
+        if (creep.store[RESOURCE_ENERGY] > 0) {
+            return true;
+        }
+        let sourceStructure;
+        if (!creep.memory.sourceId) {
+            sourceStructure = creep.room.getAvaliblesource();
+            if (sourceStructure == ERR_NOT_FOUND) {
+                creep.say('我傻了');
+                return false;
+            }
+            else {
+                creep.memory.sourceId = sourceStructure.id;
+            }
+        }
+        else {
+            sourceStructure = Game.getObjectById(creep.memory.sourceId);
+        }
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+            creep.say('你是我滴神');
+            delete creep.memory.sourceId;
+        }
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(sourceStructure, { visualizePathStyle: { stroke: '#ffffff' } });
+        }
+        return false;
+    },
+    target: creep => {
+        var targets = creep.room.getRepairstructure();
+        if (targets == ERR_NOT_FOUND) {
+            creep.setFillWallid();
+            const result = creep.steadyWall();
+            if (result == ERR_NOT_FOUND) {
+                if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(creep.room.controller);
+                }
+            }
+        }
+        else {
+            creep.memory.targetId = targets.id;
+            if (creep.repair(targets) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(targets, { visualizePathStyle: { stroke: '#cc3fb5' } });
+            }
+        }
+        if (creep.store.getUsedCapacity() === 0) {
+            return true;
+        }
+        return false;
+    }
+});
+
+/**
  * 引入 creep 配置项
  * 其键为角色名（role），其值为对应角色的逻辑生成函数
  */
 const roles = {
     'harvester': harvester,
     'upgrader': upgrader,
-    'builder': builder
+    'builder': builder,
+    'repairer': repairer
 };
 class CreepExtension extends Creep {
     /*
@@ -15887,7 +15943,7 @@ class CreepExtension extends Creep {
         if (wall.hits < 1000000) {
             const result = this.repair(wall);
             if (result == ERR_NOT_IN_RANGE)
-                this.moveTo(wall.pos);
+                this.moveTo(wall.pos, { visualizePathStyle: { stroke: '#fa1125' } });
         }
         else
             delete this.memory.fillWallId;
@@ -16027,6 +16083,16 @@ class RoomExtention extends Room {
                     return i;
                 }
             }
+        }
+        return ERR_NOT_FOUND;
+    }
+    getRepairstructure() {
+        const damagedStructure = this.find(FIND_STRUCTURES, {
+            filter: (i) => i.structureType != STRUCTURE_WALL && i.hits < i.hitsMax
+        });
+        if (damagedStructure.length) {
+            damagedStructure.sort((a, b) => a.hits - b.hits);
+            return damagedStructure[0];
         }
         return ERR_NOT_FOUND;
     }

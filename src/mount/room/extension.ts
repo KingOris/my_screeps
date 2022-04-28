@@ -1,3 +1,4 @@
+import room from "."
 
 /*
 Room 拓展
@@ -128,6 +129,19 @@ export class RoomExtention extends Room{
                     return i
                 }
             }
+        }
+
+        return ERR_NOT_FOUND
+    }
+
+    public getRepairstructure():Structure | ERR_NOT_FOUND{
+        const damagedStructure = this.find(FIND_STRUCTURES,{
+            filter:(i:Structure) => i.structureType != STRUCTURE_WALL && i.hits<i.hitsMax
+        })
+
+        if(damagedStructure.length){
+            damagedStructure.sort((a,b) => a.hits - b.hits);
+            return damagedStructure[0]
         }
 
         return ERR_NOT_FOUND
