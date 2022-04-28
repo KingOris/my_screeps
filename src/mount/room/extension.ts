@@ -83,7 +83,7 @@ export class RoomExtention extends Room{
         if(!this.memory.initial){
             this.createHaversterApi()
             this.createUpgraderApi()
-            
+
             this.memory.initial = true
         }
     }
@@ -146,11 +146,25 @@ export class RoomExtention extends Room{
 
         return ERR_NOT_FOUND
     }
+
+    public fill_extension():void{
+        const extensions = this.find(FIND_MY_STRUCTURES,{
+            filter:(i:StructureExtension) => i.structureType == STRUCTURE_EXTENSION && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
+        })
+
+        if(extensions.length){
+            this.memory.fill_extension = extensions
+        }else{
+            this.memory.fill_extension = []
+        }
+
+    }
     /**
      * 房间工作整合
      */
     public doing():void{
         this.roomInitial()
         this.checkMemory()
+        this.fill_extension()
     }
 }

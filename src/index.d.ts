@@ -54,6 +54,7 @@ interface Room{
     checkMemory():void
     getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND
     getRepairstructure():Structure | ERR_NOT_FOUND
+    fill_extension():void
     doing(): void
 }
 
@@ -69,6 +70,8 @@ interface RoomMemory {
     }
 
     initial?:boolean
+
+    fill_extension?:Structure[]
 }
 
 interface StructureSpawn{

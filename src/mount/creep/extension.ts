@@ -2,6 +2,7 @@ import builder from "src/role/role.builder";
 import harvester from "src/role/role.harvester";
 import upgrader from "src/role/role.upgrader";
 import repairer from "src/role/role.repairer";
+import carrier from "src/role/role.carrier";
 /**
  * 引入 creep 配置项
  * 其键为角色名（role），其值为对应角色的逻辑生成函数
@@ -10,7 +11,8 @@ import repairer from "src/role/role.repairer";
     'harvester': harvester,
     'upgrader': upgrader,
     'builder': builder,
-    'repairer': repairer
+    'repairer': repairer,
+    'carrier': carrier
 }
 
 export class CreepExtension extends Creep {
