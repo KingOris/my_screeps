@@ -21,9 +21,10 @@
             sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
         }
 
-        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
+        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY,50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
             creep.say('你是我滴神')
             delete creep.memory.sourceId
+            return false
         }
 
         if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_IN_RANGE){

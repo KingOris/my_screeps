@@ -1,3 +1,5 @@
+import { bodaypart } from "src/setting"
+
 export class SpawnExtension extends StructureSpawn {
 
     public work():void{
@@ -49,8 +51,53 @@ export class SpawnExtension extends StructureSpawn {
         const source = creep_config.data?.sourceId
         const target = creep_config.data?.targetId
 
-        const return_code = this.spawnCreep(creep_config.bodys,taskName,{memory:{role:creep_config.role,ready:false,building:false,targetId:target,sourceId:source}})
+        const return_code = this.spawnCreep(this.bodyCalculate(creep_config.bodys),taskName,{memory:{role:creep_config.role,ready:false,building:false,targetId:target,sourceId:source}})
         return return_code
+    }
+
+    private getNumRange(number:number):EnergyRange{
+        switch(true){
+            case number >= 10000:
+                return 10000;
+            case number >= 5600:
+                return 5600;
+            case number >= 2300:
+                return 2300;
+            case number >= 1800:
+                return 1800;
+            case number >= 1300:
+                return 1300;
+            case number >= 800:
+                return 800;
+             case number >= 550:
+                return 550;
+            case number >= 300:
+                return 300
+            default:
+                return 300
+        }
+    }
+    
+    private bodyCalculate(role:BodyRoles):BodyPartConstant[]{
+        const roomEnergy = this.getNumRange(this.room.energyAvailable)
+
+        let body_parts:BodyPartConstant[] = []
+
+        const get_body_parts = bodaypart[role][roomEnergy]
+
+        for(let i=0;i<get_body_parts[WORK];i++){
+            body_parts.push('work')
+        }
+        
+        for(let i=0;i<get_body_parts[MOVE];i++){
+            body_parts.push('move')
+        }
+
+        for(let i=0;i<get_body_parts[CARRY];i++){
+            body_parts.push('carry')
+        }
+
+        return body_parts
     }
 
     /**

@@ -1,3 +1,4 @@
+import harvester from "src/role/role.harvester"
 import room from "."
 
 /*
@@ -12,7 +13,7 @@ export class RoomExtention extends Room{
      * @param spawnRoom 房间id
      * @param bodys 需要孵化的身体部件
      */
-    public addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyPartConstant[],data?:CreepData):void{
+    public addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyRoles,data?:CreepData):void{
         //如果没有就生成一个空的
         if(!this.memory.creepConfigs){
             this.memory.creepConfigs = {}
@@ -43,8 +44,8 @@ export class RoomExtention extends Room{
      * 生成upgraderApi
      */
     private createUpgraderApi(): void{
-        this.addCreepApi('Upgrader1','upgrader',this.name,['work','carry','move'])
-        this.addCreepApi('Upgrader2','upgrader',this.name,['work','carry','move'])
+        this.addCreepApi('Upgrader1','upgrader',this.name,'worker')
+        this.addCreepApi('Upgrader2','upgrader',this.name,'worker')
     }
 
     /**
@@ -52,7 +53,7 @@ export class RoomExtention extends Room{
      */
     private energy_source_pos_check(source:Source): void{
         for (let i = 0; i <= this.pos_avail(source); i++){
-            this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,['work','carry','move'],{sourceId : source.id})
+            this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,'harvester',{sourceId : source.id})
         }
 
     }
@@ -93,7 +94,9 @@ export class RoomExtention extends Room{
      * @param name creep名称/Api名称
      */
     public spawnMission(name:string):void{
-        const return_code = this.find(FIND_MY_SPAWNS)[0].addTask(name)
+        // 此房间spawn
+        const this_spawn = this.find(FIND_MY_SPAWNS)[0]
+        const return_code = this_spawn.addTask(name)
         this.memory.creepConfigs[name].inList = true
         console.log('Spawn mission add: ' + return_code +' mission in the list')
     }
@@ -121,11 +124,11 @@ export class RoomExtention extends Room{
 
         if (containersWithEnergy.length){
             for (let i of containersWithEnergy){
-                if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500){
+                if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100){
                     return i
                 }
 
-                if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10){
+                if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100){
                     return i
                 }
             }
@@ -140,7 +143,7 @@ export class RoomExtention extends Room{
         })
 
         if(damagedStructure.length){
-            damagedStructure.sort((a,b) => a.hits - b.hits);
+            damagedStructure.sort((a,b) => (a.hits/a.hitsMax) - (b.hits/b.hitsMax));
             return damagedStructure[0]
         }
 
@@ -151,11 +154,18 @@ export class RoomExtention extends Room{
         const extensions = this.find(FIND_MY_STRUCTURES,{
             filter:(i:StructureExtension) => i.structureType == STRUCTURE_EXTENSION && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
         })
+        
+        // 此房间spawn
+        const this_spawn = this.find(FIND_MY_SPAWNS)[0]
 
         if(extensions.length){
             this.memory.fill_extension = extensions
         }else{
             this.memory.fill_extension = []
+        }
+
+        if(this_spawn.store.getFreeCapacity(RESOURCE_ENERGY)!=0){
+            this.memory.fill_extension?.push(this_spawn)
         }
 
     }

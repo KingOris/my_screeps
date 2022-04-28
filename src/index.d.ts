@@ -47,7 +47,7 @@ interface CreepMemory {
 }
 
 interface Room{
-    addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyPartConstant[],data?:CreepData): void
+    addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyRoles,data?:CreepData): void
     removeCreepApi(configName: string): void
     roomInitial(): void
     spawnMission(name:string): void
@@ -64,7 +64,7 @@ interface RoomMemory {
             role: CreepRoleName,
             data?: CreepData,
             spawnRoom:string,
-            bodys:BodyPartConstant[]
+            bodys:BodyRoles
             inList?:boolean
         }
     }
@@ -96,8 +96,11 @@ declare module NodeJS {
 
 type CreepRoleName = CoreRoles
 
-type CoreRoles = 'harvester' | 'upgrader' | 'builder' //| 'carrier' | 'repairer'
+type CoreRoles = 'harvester' | 'upgrader' | 'builder' | 'carrier' | 'repairer'
 
+type EnergyRange = 300 | 550 | 800 | 1300 | 1800 | 2300 | 5600 | 10000
+
+type BodyRoles = 'harvester' | 'worker'
 interface CreepApi {
     //检查房间是否需要
     isNeed?:(room:Room) => boolean

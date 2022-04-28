@@ -15841,9 +15841,10 @@ const repairer = (data) => ({
         else {
             sourceStructure = Game.getObjectById(creep.memory.sourceId);
         }
-        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, 50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.say('你是我滴神');
             delete creep.memory.sourceId;
+            return false;
         }
         if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(sourceStructure, { visualizePathStyle: { stroke: '#ffffff' } });
@@ -15907,9 +15908,10 @@ const carrier = (data) => ({
         else {
             sourceStructure = Game.getObjectById(creep.memory.sourceId);
         }
-        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, 50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.say('你是我滴神');
             delete creep.memory.sourceId;
+            return false;
         }
         if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
             creep.moveTo(sourceStructure, { visualizePathStyle: { stroke: '#ffffff' } });
@@ -16084,15 +16086,15 @@ class RoomExtention extends Room {
      * 生成upgraderApi
      */
     createUpgraderApi() {
-        this.addCreepApi('Upgrader1', 'upgrader', this.name, ['work', 'carry', 'move']);
-        this.addCreepApi('Upgrader2', 'upgrader', this.name, ['work', 'carry', 'move']);
+        this.addCreepApi('Upgrader1', 'upgrader', this.name, 'worker');
+        this.addCreepApi('Upgrader2', 'upgrader', this.name, 'worker');
     }
     /**
      * 检查能量可采集位置数量
      */
     energy_source_pos_check(source) {
         for (let i = 0; i <= this.pos_avail(source); i++) {
-            this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, ['work', 'carry', 'move'], { sourceId: source.id });
+            this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, 'harvester', { sourceId: source.id });
         }
     }
     pos_avail(source) {
@@ -16128,7 +16130,9 @@ class RoomExtention extends Room {
      * @param name creep名称/Api名称
      */
     spawnMission(name) {
-        const return_code = this.find(FIND_MY_SPAWNS)[0].addTask(name);
+        // 此房间spawn
+        const this_spawn = this.find(FIND_MY_SPAWNS)[0];
+        const return_code = this_spawn.addTask(name);
         this.memory.creepConfigs[name].inList = true;
         console.log('Spawn mission add: ' + return_code + ' mission in the list');
     }
@@ -16151,10 +16155,10 @@ class RoomExtention extends Room {
         });
         if (containersWithEnergy.length) {
             for (let i of containersWithEnergy) {
-                if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 500) {
+                if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100) {
                     return i;
                 }
-                if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 10) {
+                if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100) {
                     return i;
                 }
             }
@@ -16166,20 +16170,26 @@ class RoomExtention extends Room {
             filter: (i) => i.structureType != STRUCTURE_WALL && i.hits < i.hitsMax
         });
         if (damagedStructure.length) {
-            damagedStructure.sort((a, b) => a.hits - b.hits);
+            damagedStructure.sort((a, b) => (a.hits / a.hitsMax) - (b.hits / b.hitsMax));
             return damagedStructure[0];
         }
         return ERR_NOT_FOUND;
     }
     fill_extension() {
+        var _a;
         const extensions = this.find(FIND_MY_STRUCTURES, {
             filter: (i) => i.structureType == STRUCTURE_EXTENSION && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
         });
+        // 此房间spawn
+        const this_spawn = this.find(FIND_MY_SPAWNS)[0];
         if (extensions.length) {
             this.memory.fill_extension = extensions;
         }
         else {
             this.memory.fill_extension = [];
+        }
+        if (this_spawn.store.getFreeCapacity(RESOURCE_ENERGY) != 0) {
+            (_a = this.memory.fill_extension) === null || _a === void 0 ? void 0 : _a.push(this_spawn);
         }
     }
     /**
@@ -16194,6 +16204,29 @@ class RoomExtention extends Room {
 
 var mountRoom = () => {
     assignPrototype(Room, RoomExtention);
+};
+
+const bodaypart = {
+    worker: {
+        300: { [WORK]: 1, [CARRY]: 1, [MOVE]: 1 },
+        550: { [WORK]: 2, [CARRY]: 2, [MOVE]: 2 },
+        800: { [WORK]: 3, [CARRY]: 3, [MOVE]: 3 },
+        1300: { [WORK]: 4, [CARRY]: 4, [MOVE]: 4 },
+        1800: { [WORK]: 6, [CARRY]: 6, [MOVE]: 6 },
+        2300: { [WORK]: 7, [CARRY]: 7, [MOVE]: 7 },
+        5600: { [WORK]: 12, [CARRY]: 6, [MOVE]: 9 },
+        10000: { [WORK]: 20, [CARRY]: 8, [MOVE]: 14 }
+    },
+    harvester: {
+        300: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
+        550: { [WORK]: 4, [CARRY]: 1, [MOVE]: 2 },
+        800: { [WORK]: 6, [CARRY]: 1, [MOVE]: 3 },
+        1300: { [WORK]: 8, [CARRY]: 1, [MOVE]: 4 },
+        1800: { [WORK]: 10, [CARRY]: 1, [MOVE]: 5 },
+        2300: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
+        5600: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
+        10000: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 }
+    }
 };
 
 class SpawnExtension extends StructureSpawn {
@@ -16235,8 +16268,45 @@ class SpawnExtension extends StructureSpawn {
         const creep_config = this.room.memory.creepConfigs[taskName];
         const source = (_a = creep_config.data) === null || _a === void 0 ? void 0 : _a.sourceId;
         const target = (_b = creep_config.data) === null || _b === void 0 ? void 0 : _b.targetId;
-        const return_code = this.spawnCreep(creep_config.bodys, taskName, { memory: { role: creep_config.role, ready: false, building: false, targetId: target, sourceId: source } });
+        const return_code = this.spawnCreep(this.bodyCalculate(creep_config.bodys), taskName, { memory: { role: creep_config.role, ready: false, building: false, targetId: target, sourceId: source } });
         return return_code;
+    }
+    getNumRange(number) {
+        switch (true) {
+            case number >= 10000:
+                return 10000;
+            case number >= 5600:
+                return 5600;
+            case number >= 2300:
+                return 2300;
+            case number >= 1800:
+                return 1800;
+            case number >= 1300:
+                return 1300;
+            case number >= 800:
+                return 800;
+            case number >= 550:
+                return 550;
+            case number >= 300:
+                return 300;
+            default:
+                return 300;
+        }
+    }
+    bodyCalculate(role) {
+        const roomEnergy = this.getNumRange(this.room.energyAvailable);
+        let body_parts = [];
+        const get_body_parts = bodaypart[role][roomEnergy];
+        for (let i = 0; i < get_body_parts[WORK]; i++) {
+            body_parts.push('work');
+        }
+        for (let i = 0; i < get_body_parts[MOVE]; i++) {
+            body_parts.push('move');
+        }
+        for (let i = 0; i < get_body_parts[CARRY]; i++) {
+            body_parts.push('carry');
+        }
+        return body_parts;
     }
     /**
      * Spawn内存初始化
