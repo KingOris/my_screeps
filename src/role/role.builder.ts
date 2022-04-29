@@ -15,20 +15,22 @@ const builder = (data:CreepData): CreepApi =>({
             return true
         }
 
-        let sourceStructure: StructureStorage | StructureContainer | ERR_NOT_FOUND
+        let source_list: Array<StructureContainer | StructureStorage>  | ERR_NOT_FOUND
+        let sourceStructure:StructureContainer | StructureStorage
         if(!creep.memory.sourceId){
-            sourceStructure = creep.room.getAvaliblesource()
-            if(sourceStructure == ERR_NOT_FOUND){
-                creep.say('我傻了')
+            source_list= creep.room.getAvaliblesource()
+            if(source_list == ERR_NOT_FOUND){
+                creep.say('一杯二锅头',true)
                 return false
             }else{
+                sourceStructure = creep.findNearestSource(source_list)
                 creep.memory.sourceId = sourceStructure.id
             }
         }else{
             sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
         }
 
-        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
+        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY,creep.store.getCapacity()) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
             creep.say('你是我滴神')
             delete creep.memory.sourceId
         }
@@ -44,7 +46,9 @@ const builder = (data:CreepData): CreepApi =>({
         var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
         if(targets.length){
             creep.memory.targetId = targets[0].id
+            creep.moveTo(targets[0].pos, {range:1,visualizePathStyle: {stroke: '#ffffff'}})
             if(creep.build(targets[0]) ==  ERR_NOT_IN_RANGE){
+                //走到上面省的堵路
                 creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
             }
         }else{

@@ -3,6 +3,7 @@ import harvester from "src/role/role.harvester";
 import upgrader from "src/role/role.upgrader";
 import repairer from "src/role/role.repairer";
 import carrier from "src/role/role.carrier";
+
 /**
  * 引入 creep 配置项
  * 其键为角色名（role），其值为对应角色的逻辑生成函数
@@ -53,7 +54,7 @@ export class CreepExtension extends Creep {
             this.memory.working = !this.memory.working
         }
     }
-
+    //找墙
     public setFillWallid():void{
         const walls = this.room.find(FIND_STRUCTURES,{filter:(i)=>i.structureType == STRUCTURE_WALL || i.structureType == STRUCTURE_RAMPART})
 
@@ -73,7 +74,7 @@ export class CreepExtension extends Creep {
             }
         }
     }
-    
+    //刷墙
     public steadyWall(): OK | ERR_NOT_FOUND {
         const wall = Game.getObjectById<StructureWall | StructureRampart>(this.memory.fillWallId!)
         if (!wall) return ERR_NOT_FOUND
@@ -85,5 +86,21 @@ export class CreepExtension extends Creep {
         else delete this.memory.fillWallId
 
         return OK
+    }
+
+    public findNearestSource(structurelist:Array<StructureContainer | StructureStorage>):StructureContainer | StructureStorage{
+        
+        if(this.memory.targetId){
+            const target:Structure|null = Game.getObjectById(this.memory.targetId!)
+            if(target){
+                structurelist.sort((a,b)=>(this.pos2(a,target)-this.pos2(b,target)))
+                return structurelist[0]
+            }
+        }
+        return structurelist[0]
+    }
+
+    private pos2(structure1:Structure,structure2:Structure):number{
+        return Math.sqrt((structure1.pos.x-structure2.pos.x)^2 + (structure1.pos.y-structure2.pos.y)^2)
     }
 }

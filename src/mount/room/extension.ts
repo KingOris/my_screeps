@@ -116,22 +116,23 @@ export class RoomExtention extends Room{
             
     }
 
-    public getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND{
+    public getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND{
         const containersWithEnergy = this.find(FIND_STRUCTURES, {
             filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
         })
         
-
+        let result:Array<StructureContainer | StructureStorage> =[]
         if (containersWithEnergy.length){
             for (let i of containersWithEnergy){
                 if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100){
-                    return i
+                    result.push(i)
                 }
 
                 if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100){
-                    return i
+                    result.push(i)
                 }
             }
+            return result
         }
 
         return ERR_NOT_FOUND

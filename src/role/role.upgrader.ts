@@ -40,7 +40,7 @@ const upgrader = (data:CreepData) : CreepApi => ({
                 creep.suicide()
             }
         }else{
-            creep.memory.sourceId = avalible_source.id
+            creep.memory.sourceId = creep.findNearestSource(avalible_source).id
         }
 
         return false

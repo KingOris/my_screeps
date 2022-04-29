@@ -2,6 +2,7 @@ interface Creep{
     work(): void
     steadyWall(): OK| ERR_NOT_FOUND 
     setFillWallid():void
+    findNearestSource(structurelist:Array<StructureContainer | StructureStorage> ):StructureContainer | StructureStorage
 }
 
 interface CreepMemory {
@@ -52,7 +53,7 @@ interface Room{
     roomInitial(): void
     spawnMission(name:string): void
     checkMemory():void
-    getAvaliblesource():StructureStorage | StructureContainer | ERR_NOT_FOUND
+    getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND
     getRepairstructure():Structure | ERR_NOT_FOUND
     fill_extension():void
     doing(): void
@@ -131,4 +132,5 @@ interface UpgraderData {
     //Controller
     targetId?: StructureController['id']
 }
+
 

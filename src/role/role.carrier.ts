@@ -18,20 +18,22 @@ const carrier = (data:CreepData): CreepApi =>({
             return true
         }
 
-        let sourceStructure: StructureStorage | StructureContainer | ERR_NOT_FOUND
+        let source_list: Array<StructureContainer | StructureStorage>  | ERR_NOT_FOUND
+        let sourceStructure:StructureContainer | StructureStorage
         if(!creep.memory.sourceId){
-            sourceStructure = creep.room.getAvaliblesource()
-            if(sourceStructure == ERR_NOT_FOUND){
-                creep.say('我傻了')
+            source_list= creep.room.getAvaliblesource()
+            if(source_list == ERR_NOT_FOUND){
+                creep.say('我傻了',true)
                 return false
             }else{
+                sourceStructure = creep.findNearestSource(source_list)
                 creep.memory.sourceId = sourceStructure.id
             }
         }else{
             sourceStructure = Game.getObjectById<StructureContainer | StructureStorage>(creep.memory.sourceId!)!
         }
 
-        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY,50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
+        if (creep.withdraw(sourceStructure,RESOURCE_ENERGY,creep.store.getCapacity()) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure,RESOURCE_ENERGY) == ERR_INVALID_TARGET){
             creep.say('你是我滴神')
             delete creep.memory.sourceId
             return false
@@ -47,21 +49,17 @@ const carrier = (data:CreepData): CreepApi =>({
     target: creep=>{
         //如果有target就直接用
         if(creep.memory.targetId){
-            const target = Game.getObjectById<StructureExtension>(creep.memory.targetId)
+            const target = Game.getObjectById<StructureExtension | StructureSpawn>(creep.memory.targetId)
             if(target&&creep.store[RESOURCE_ENERGY]>0){
                 if(creep.transfer(target,RESOURCE_ENERGY)==ERR_NOT_IN_RANGE){
                     creep.moveTo(target)
-                }else if(creep.transfer(target,RESOURCE_ENERGY) == ERR_FULL){
+                }else if(creep.transfer(target,RESOURCE_ENERGY) == ERR_FULL || target.structureType==STRUCTURE_SPAWN){
                     //如果已经满了就删掉重新找target
                     delete creep.memory.targetId
                 }
-            }else if(target){
-                //没能量了就返回source阶段
-                if(creep.transfer(target,RESOURCE_ENERGY)==ERR_NOT_ENOUGH_ENERGY){
-                    return true
-                } 
             }
         }
+
         //如果没有target就先刷新room.memory.fill_extension
         if(!creep.memory.targetId){
             creep.say('找呀找呀找朋友')
@@ -69,6 +67,10 @@ const carrier = (data:CreepData): CreepApi =>({
             if(creep.room.memory.fill_extension&&creep.room.memory.fill_extension.length){
                 creep.memory.targetId = creep.room.memory.fill_extension[0].id
             }
+        }
+        
+        if(creep.store[RESOURCE_ENERGY]==0){
+            return true
         }
         
         return false

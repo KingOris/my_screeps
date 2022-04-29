@@ -3256,21 +3256,23 @@ const builder = (data) => ({
         if (creep.store[RESOURCE_ENERGY] > 0) {
             return true;
         }
+        let source_list;
         let sourceStructure;
         if (!creep.memory.sourceId) {
-            sourceStructure = creep.room.getAvaliblesource();
-            if (sourceStructure == ERR_NOT_FOUND) {
-                creep.say('我傻了');
+            source_list = creep.room.getAvaliblesource();
+            if (source_list == ERR_NOT_FOUND) {
+                creep.say('一杯二锅头', true);
                 return false;
             }
             else {
+                sourceStructure = creep.findNearestSource(source_list);
                 creep.memory.sourceId = sourceStructure.id;
             }
         }
         else {
             sourceStructure = Game.getObjectById(creep.memory.sourceId);
         }
-        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, creep.store.getCapacity()) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.say('你是我滴神');
             delete creep.memory.sourceId;
         }
@@ -3283,7 +3285,9 @@ const builder = (data) => ({
         var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
         if (targets.length) {
             creep.memory.targetId = targets[0].id;
+            creep.moveTo(targets[0].pos, { range: 1, visualizePathStyle: { stroke: '#ffffff' } });
             if (creep.build(targets[0]) == ERR_NOT_IN_RANGE) {
+                //走到上面省的堵路
                 creep.moveTo(targets[0], { visualizePathStyle: { stroke: '#ffffff' } });
             }
         }
@@ -15789,7 +15793,7 @@ const upgrader = (data) => ({
             }
         }
         else {
-            creep.memory.sourceId = avalible_source.id;
+            creep.memory.sourceId = creep.findNearestSource(avalible_source).id;
         }
         return false;
     },
@@ -15827,21 +15831,23 @@ const repairer = (data) => ({
         if (creep.store[RESOURCE_ENERGY] > 0) {
             return true;
         }
+        let source_list;
         let sourceStructure;
         if (!creep.memory.sourceId) {
-            sourceStructure = creep.room.getAvaliblesource();
-            if (sourceStructure == ERR_NOT_FOUND) {
+            source_list = creep.room.getAvaliblesource();
+            if (source_list == ERR_NOT_FOUND) {
                 creep.say('我傻了');
                 return false;
             }
             else {
+                sourceStructure = creep.findNearestSource(source_list);
                 creep.memory.sourceId = sourceStructure.id;
             }
         }
         else {
             sourceStructure = Game.getObjectById(creep.memory.sourceId);
         }
-        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, 50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, creep.store.getCapacity()) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.say('你是我滴神');
             delete creep.memory.sourceId;
             return false;
@@ -15894,21 +15900,23 @@ const carrier = (data) => ({
         if (creep.store[RESOURCE_ENERGY] > 0) {
             return true;
         }
+        let source_list;
         let sourceStructure;
         if (!creep.memory.sourceId) {
-            sourceStructure = creep.room.getAvaliblesource();
-            if (sourceStructure == ERR_NOT_FOUND) {
-                creep.say('我傻了');
+            source_list = creep.room.getAvaliblesource();
+            if (source_list == ERR_NOT_FOUND) {
+                creep.say('我傻了', true);
                 return false;
             }
             else {
+                sourceStructure = creep.findNearestSource(source_list);
                 creep.memory.sourceId = sourceStructure.id;
             }
         }
         else {
             sourceStructure = Game.getObjectById(creep.memory.sourceId);
         }
-        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, 50) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
+        if (creep.withdraw(sourceStructure, RESOURCE_ENERGY, creep.store.getCapacity()) == ERR_NOT_ENOUGH_RESOURCES || creep.withdraw(sourceStructure, RESOURCE_ENERGY) == ERR_INVALID_TARGET) {
             creep.say('你是我滴神');
             delete creep.memory.sourceId;
             return false;
@@ -15926,15 +15934,9 @@ const carrier = (data) => ({
                 if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }
-                else if (creep.transfer(target, RESOURCE_ENERGY) == ERR_FULL) {
+                else if (creep.transfer(target, RESOURCE_ENERGY) == ERR_FULL || target.structureType == STRUCTURE_SPAWN) {
                     //如果已经满了就删掉重新找target
                     delete creep.memory.targetId;
-                }
-            }
-            else if (target) {
-                //没能量了就返回source阶段
-                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_ENOUGH_ENERGY) {
-                    return true;
                 }
             }
         }
@@ -15945,6 +15947,9 @@ const carrier = (data) => ({
             if (creep.room.memory.fill_extension && creep.room.memory.fill_extension.length) {
                 creep.memory.targetId = creep.room.memory.fill_extension[0].id;
             }
+        }
+        if (creep.store[RESOURCE_ENERGY] == 0) {
+            return true;
         }
         return false;
     }
@@ -15994,6 +15999,7 @@ class CreepExtension extends Creep {
             this.memory.working = !this.memory.working;
         }
     }
+    //找墙
     setFillWallid() {
         const walls = this.room.find(FIND_STRUCTURES, { filter: (i) => i.structureType == STRUCTURE_WALL || i.structureType == STRUCTURE_RAMPART });
         if (walls.length) {
@@ -16013,6 +16019,7 @@ class CreepExtension extends Creep {
             }
         }
     }
+    //刷墙
     steadyWall() {
         const wall = Game.getObjectById(this.memory.fillWallId);
         if (!wall)
@@ -16025,6 +16032,19 @@ class CreepExtension extends Creep {
         else
             delete this.memory.fillWallId;
         return OK;
+    }
+    findNearestSource(structurelist) {
+        if (this.memory.targetId) {
+            const target = Game.getObjectById(this.memory.targetId);
+            if (target) {
+                structurelist.sort((a, b) => (this.pos2(a, target) - this.pos2(b, target)));
+                return structurelist[0];
+            }
+        }
+        return structurelist[0];
+    }
+    pos2(structure1, structure2) {
+        return Math.sqrt((structure1.pos.x - structure2.pos.x) ^ 2 + (structure1.pos.y - structure2.pos.y) ^ 2);
     }
 }
 
@@ -16153,15 +16173,17 @@ class RoomExtention extends Room {
         const containersWithEnergy = this.find(FIND_STRUCTURES, {
             filter: (i) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
         });
+        let result = [];
         if (containersWithEnergy.length) {
             for (let i of containersWithEnergy) {
                 if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100) {
-                    return i;
+                    result.push(i);
                 }
                 if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100) {
-                    return i;
+                    result.push(i);
                 }
             }
+            return result;
         }
         return ERR_NOT_FOUND;
     }
