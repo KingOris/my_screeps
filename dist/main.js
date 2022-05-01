@@ -15865,17 +15865,6 @@ const repairer = (data) => ({
  * 搬运者
  */
 const carrier = (data) => ({
-    prepare: creep => {
-        const targets = creep.room.memory.fill_extension;
-        if (targets && targets.length) {
-            creep.memory.targetId = targets[0].id;
-            return true;
-        }
-        else {
-            creep.room.fill_extension();
-        }
-        return false;
-    },
     source: creep => {
         if (creep.store[RESOURCE_ENERGY] > 0) {
             return true;
@@ -15896,25 +15885,46 @@ const carrier = (data) => ({
         return false;
     },
     target: creep => {
+        var _a, _b, _c;
         //如果有target就直接用
-        if (creep.memory.targetId) {
-            const target = Game.getObjectById(creep.memory.targetId);
+        if ((_a = creep.room.memory.fill_extension) === null || _a === void 0 ? void 0 : _a.length) {
+            const target = creep.room.memory.fill_extension[0];
             if (target && creep.store[RESOURCE_ENERGY] > 0) {
                 if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(target);
                 }
                 else if (creep.transfer(target, RESOURCE_ENERGY) == ERR_FULL || target.structureType == STRUCTURE_SPAWN) {
-                    //如果已经满了就删掉重新找target
-                    delete creep.memory.targetId;
+                    //如果已经满了就重新找target
+                    return false;
                 }
             }
         }
-        //如果没有target就先刷新room.memory.fill_extension
-        if (!creep.memory.targetId) {
+        //如果extenstion 满了就先看看tower里面能量
+        if ((_b = creep.room.memory.fill_tower) === null || _b === void 0 ? void 0 : _b.length) {
             creep.say('找呀找呀找朋友');
-            creep.room.fill_extension();
-            if (creep.room.memory.fill_extension && creep.room.memory.fill_extension.length) {
-                creep.memory.targetId = creep.room.memory.fill_extension[0].id;
+            const target = creep.room.memory.fill_tower[0];
+            if (target && creep.store[RESOURCE_ENERGY] > 0) {
+                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
+                }
+                else if (creep.transfer(target, RESOURCE_ENERGY) == ERR_FULL) {
+                    //如果已经满了就重新找target
+                    return false;
+                }
+            }
+        }
+        //如果tower满了 就去填满storage
+        if ((_c = creep.room.memory.fill_storage) === null || _c === void 0 ? void 0 : _c.length) {
+            creep.say('我对着自己开了一枪', true);
+            const target = creep.room.memory.fill_storage[0];
+            if (target && creep.store[RESOURCE_ENERGY] > 0) {
+                if (creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
+                }
+                else if (creep.transfer(target, RESOURCE_ENERGY) == ERR_FULL) {
+                    //如果已经满了就重新找target
+                    return false;
+                }
             }
         }
         if (creep.store[RESOURCE_ENERGY] == 0) {
@@ -16203,6 +16213,28 @@ class RoomExtention extends Room {
             (_a = this.memory.fill_extension) === null || _a === void 0 ? void 0 : _a.push(this_spawn);
         }
     }
+    fill_tower() {
+        const tower = this.find(FIND_MY_STRUCTURES, {
+            filter: (i) => i.structureType == STRUCTURE_TOWER && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
+        });
+        if (tower.length) {
+            this.memory.fill_tower = tower;
+        }
+        else {
+            this.memory.fill_tower = [];
+        }
+    }
+    fill_storage() {
+        const tower = this.find(FIND_MY_STRUCTURES, {
+            filter: (i) => i.structureType == STRUCTURE_STORAGE && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
+        });
+        if (tower.length) {
+            this.memory.fill_storage = tower;
+        }
+        else {
+            this.memory.fill_storage = [];
+        }
+    }
     /**
      * 房间工作整合
      */
@@ -16210,6 +16242,8 @@ class RoomExtention extends Room {
         this.roomInitial();
         this.checkMemory();
         this.fill_extension();
+        this.fill_storage();
+        this.fill_tower();
     }
 }
 

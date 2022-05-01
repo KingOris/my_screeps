@@ -56,11 +56,11 @@ interface Room{
     checkMemory():void
     getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND
     getRepairstructure():Structure | ERR_NOT_FOUND
-    fill_extension():void
     doing(): void
 }
 
 interface RoomMemory {
+    //creepApi
     creepConfigs: {
         [creepName:string]:{
             role: CreepRoleName,
@@ -70,10 +70,14 @@ interface RoomMemory {
             inList?:boolean
         }
     }
-
+    //是否初始化过
     initial?:boolean
-
+    //需要能量的extension
     fill_extension?:Structure[]
+    //需要能量的tower
+    fill_tower?:Structure[]
+    //未满的storage
+    fill_storage?:Structure[]
 }
 
 interface StructureSpawn{

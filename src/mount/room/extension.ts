@@ -151,7 +151,7 @@ export class RoomExtention extends Room{
         return ERR_NOT_FOUND
     }
 
-    public fill_extension():void{
+    private fill_extension():void{
         const extensions = this.find(FIND_MY_STRUCTURES,{
             filter:(i:StructureExtension) => i.structureType == STRUCTURE_EXTENSION && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
         })
@@ -170,6 +170,31 @@ export class RoomExtention extends Room{
         }
 
     }
+
+    private fill_tower():void{
+        const tower = this.find(FIND_MY_STRUCTURES,{
+            filter:(i:StructureTower) => i.structureType == STRUCTURE_TOWER && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
+        })
+        
+        if(tower.length){
+            this.memory.fill_tower = tower
+        }else{
+            this.memory.fill_tower = []
+        }
+    }
+
+    private fill_storage():void{
+        const tower = this.find(FIND_MY_STRUCTURES,{
+            filter:(i:StructureStorage) => i.structureType == STRUCTURE_STORAGE && i.store.getFreeCapacity(RESOURCE_ENERGY) != 0
+        })
+        
+        if(tower.length){
+            this.memory.fill_storage = tower
+        }else{
+            this.memory.fill_storage = []
+        }
+    }
+
     /**
      * 房间工作整合
      */
@@ -177,5 +202,7 @@ export class RoomExtention extends Room{
         this.roomInitial()
         this.checkMemory()
         this.fill_extension()
+        this.fill_storage()
+        this. fill_tower()
     }
 }
