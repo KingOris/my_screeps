@@ -103,4 +103,22 @@ export class CreepExtension extends Creep {
     private pos2(structure1:Structure,structure2:Structure):number{
         return Math.sqrt((structure1.pos.x-structure2.pos.x)^2 + (structure1.pos.y-structure2.pos.y)^2)
     }
+
+    public findSource(): Id<Source> | Id<StructureContainer> | Id<StructureStorage> | OK | ERR_NOT_FOUND{
+        let source_list: Array<StructureContainer | StructureStorage>  | ERR_NOT_FOUND
+        let sourceStructure:StructureContainer | StructureStorage
+        if(!this.memory.sourceId){
+            source_list= this.room.getAvaliblesource()
+            if(source_list == ERR_NOT_FOUND){
+                this.say('一杯二锅头',true)
+                return ERR_NOT_FOUND
+            }else{
+                sourceStructure = this.findNearestSource(source_list)
+                this.memory.sourceId = sourceStructure.id
+                return OK
+            }
+        }else{
+            return this.memory.sourceId
+        }
+    }
 }

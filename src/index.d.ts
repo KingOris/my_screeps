@@ -2,6 +2,7 @@ interface Creep{
     work(): void
     steadyWall(): OK| ERR_NOT_FOUND 
     setFillWallid():void
+    findSource(): Id<Source> | Id<StructureContainer> | Id<StructureStorage> | OK | ERR_NOT_FOUND
     findNearestSource(structurelist:Array<StructureContainer | StructureStorage> ):StructureContainer | StructureStorage
 }
 
