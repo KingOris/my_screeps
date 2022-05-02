@@ -16065,6 +16065,36 @@ var mountCreep = () => {
     assignPrototype(Creep, CreepExtension);
 };
 
+const bodaypart = {
+    worker: {
+        300: { [WORK]: 1, [CARRY]: 1, [MOVE]: 1 },
+        550: { [WORK]: 2, [CARRY]: 2, [MOVE]: 2 },
+        800: { [WORK]: 3, [CARRY]: 3, [MOVE]: 3 },
+        1300: { [WORK]: 4, [CARRY]: 4, [MOVE]: 4 },
+        1800: { [WORK]: 6, [CARRY]: 6, [MOVE]: 6 },
+        2300: { [WORK]: 7, [CARRY]: 7, [MOVE]: 7 },
+        5600: { [WORK]: 12, [CARRY]: 6, [MOVE]: 9 },
+        10000: { [WORK]: 20, [CARRY]: 8, [MOVE]: 14 }
+    },
+    harvester: {
+        300: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
+        550: { [WORK]: 4, [CARRY]: 1, [MOVE]: 2 },
+        800: { [WORK]: 6, [CARRY]: 1, [MOVE]: 3 },
+        1300: { [WORK]: 8, [CARRY]: 1, [MOVE]: 4 },
+        1800: { [WORK]: 10, [CARRY]: 1, [MOVE]: 5 },
+        2300: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
+        5600: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
+        10000: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 }
+    }
+};
+const creepNumber = {
+    0: { ['upgrader']: 1 },
+    1: { ['upgrader']: 1, ['builder']: 1, ['carrier']: 1 },
+    2: { ['upgrader']: 2, ['builder']: 2, ['carrier']: 2, ['repairer']: 1 },
+    3: { ['upgrader']: 3, ['builder']: 2, ['carrier']: 2, ['repairer']: 2 },
+    4: { ['upgrader']: 4, ['builder']: 2, ['carrier']: 3, ['repairer']: 3 },
+};
+
 /*
 Room 拓展
 */
@@ -16102,18 +16132,36 @@ class RoomExtention extends Room {
         energy_sources.forEach(source => this.energy_source_pos_check(source));
     }
     /**
-     * 生成upgraderApi
+     * 生成Api
      */
-    createUpgraderApi() {
-        this.addCreepApi('Upgrader1', 'upgrader', this.name, 'worker');
-        this.addCreepApi('Upgrader2', 'upgrader', this.name, 'worker');
+    createApi(number, role) {
+        const name = role + number;
+        if (role == 'upgrader') {
+            this.addCreepApi(name, 'upgrader', this.name, 'worker');
+            this.memory.creepNum[role] += 1;
+        }
+        if (role == 'carrier') {
+            this.addCreepApi(name, 'carrier', this.name, 'worker');
+            this.memory.creepNum[role] += 1;
+        }
+        if (role == 'builder') {
+            this.addCreepApi(name, 'builder', this.name, 'worker');
+            this.memory.creepNum[role] += 1;
+        }
+        if (role == 'repairer') {
+            this.addCreepApi(name, 'repairer', this.name, 'worker');
+            this.memory.creepNum[role] += 1;
+        }
     }
     /**
      * 检查能量可采集位置数量
      */
     energy_source_pos_check(source) {
         for (let i = 0; i <= this.pos_avail(source); i++) {
-            this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, 'harvester', { sourceId: source.id });
+            if (this.memory.creepNum['harvester'] < 5) {
+                this.memory.creepNum['harvester'] += 1;
+                this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, 'harvester', { sourceId: source.id });
+            }
         }
     }
     pos_avail(source) {
@@ -16121,7 +16169,6 @@ class RoomExtention extends Room {
         const x = pos.x;
         const y = pos.y;
         const position = this.check_pos(x + 1, y + 1) + this.check_pos(x - 1, y - 1) + this.check_pos(x + 1, y) + this.check_pos(x, y + 1) + this.check_pos(x - 1, y) + this.check_pos(x, y - 1);
-        console.log(position + source.id);
         return position;
     }
     check_pos(x, y) {
@@ -16139,9 +16186,29 @@ class RoomExtention extends Room {
      */
     roomInitial() {
         if (!this.memory.initial) {
+            this.memory.creepNum = { ['harvester']: 0, ['upgrader']: 0, ['carrier']: 0, ['builder']: 0, ['repairer']: 0 };
             this.createHaversterApi();
-            this.createUpgraderApi();
+            this.createApi(1, 'upgrader');
+            this.memory.level = 0;
             this.memory.initial = true;
+        }
+    }
+    roomLevel() {
+        var _a;
+        if (this.memory.level == 0) {
+            const container = this.find(FIND_STRUCTURES, {
+                filter: (i) => i.structureType == STRUCTURE_CONTAINER
+            });
+            if (container.length) {
+                this.memory.level = 1;
+                return;
+            }
+            else {
+                return;
+            }
+        }
+        if (this.controller) {
+            this.memory.level = (_a = this.controller) === null || _a === void 0 ? void 0 : _a.level;
         }
     }
     /**
@@ -16164,6 +16231,22 @@ class RoomExtention extends Room {
             if (!_.find(creeps, creep => creep.name == config) && !this.memory.creepConfigs[config].inList) {
                 if (!Game.creeps[config] || !Memory.creeps[config]) {
                     this.spawnMission(config);
+                }
+            }
+        }
+    }
+    creepApiControl() {
+        const level = this.memory.level;
+        const roles = ['upgrader', 'carrier', 'builder', 'repairer'];
+        roles.forEach(role => this.numberCalculate(role, level));
+    }
+    numberCalculate(name, level) {
+        const target = creepNumber[level][name];
+        if (target) {
+            const diff = target - this.memory.creepNum[name];
+            if (diff != 0) {
+                for (var i = 0; i < diff; i++) {
+                    this.createApi(this.memory.creepNum[name] + 1 + i, name);
                 }
             }
         }
@@ -16241,6 +16324,8 @@ class RoomExtention extends Room {
     doing() {
         this.roomInitial();
         this.checkMemory();
+        this.roomLevel();
+        this.creepApiControl();
         this.fill_extension();
         this.fill_storage();
         this.fill_tower();
@@ -16249,29 +16334,6 @@ class RoomExtention extends Room {
 
 var mountRoom = () => {
     assignPrototype(Room, RoomExtention);
-};
-
-const bodaypart = {
-    worker: {
-        300: { [WORK]: 1, [CARRY]: 1, [MOVE]: 1 },
-        550: { [WORK]: 2, [CARRY]: 2, [MOVE]: 2 },
-        800: { [WORK]: 3, [CARRY]: 3, [MOVE]: 3 },
-        1300: { [WORK]: 4, [CARRY]: 4, [MOVE]: 4 },
-        1800: { [WORK]: 6, [CARRY]: 6, [MOVE]: 6 },
-        2300: { [WORK]: 7, [CARRY]: 7, [MOVE]: 7 },
-        5600: { [WORK]: 12, [CARRY]: 6, [MOVE]: 9 },
-        10000: { [WORK]: 20, [CARRY]: 8, [MOVE]: 14 }
-    },
-    harvester: {
-        300: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
-        550: { [WORK]: 4, [CARRY]: 1, [MOVE]: 2 },
-        800: { [WORK]: 6, [CARRY]: 1, [MOVE]: 3 },
-        1300: { [WORK]: 8, [CARRY]: 1, [MOVE]: 4 },
-        1800: { [WORK]: 10, [CARRY]: 1, [MOVE]: 5 },
-        2300: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
-        5600: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 },
-        10000: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 }
-    }
 };
 
 class SpawnExtension extends StructureSpawn {

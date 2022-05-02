@@ -1,4 +1,5 @@
 import harvester from "src/role/role.harvester"
+import { creepNumber } from "src/setting"
 import room from "."
 
 /*
@@ -41,11 +42,29 @@ export class RoomExtention extends Room{
     }
 
     /**
-     * 生成upgraderApi
+     * 生成Api
      */
-    private createUpgraderApi(): void{
-        this.addCreepApi('Upgrader1','upgrader',this.name,'worker')
-        this.addCreepApi('Upgrader2','upgrader',this.name,'worker')
+    public createApi(number:number,role:string): void{
+        const name = role + number
+        if(role == 'upgrader'){
+            this.addCreepApi(name,'upgrader',this.name,'worker')
+            this.memory.creepNum[role] += 1
+        }
+
+        if(role == 'carrier'){
+            this.addCreepApi(name,'carrier',this.name,'worker')
+            this.memory.creepNum[role] += 1
+        }
+
+        if(role == 'builder'){
+            this.addCreepApi(name,'builder',this.name,'worker')
+            this.memory.creepNum[role] += 1
+        }
+
+        if(role == 'repairer'){
+            this.addCreepApi(name,'repairer',this.name,'worker')
+            this.memory.creepNum[role] += 1
+        }
     }
 
     /**
@@ -53,7 +72,10 @@ export class RoomExtention extends Room{
      */
     private energy_source_pos_check(source:Source): void{
         for (let i = 0; i <= this.pos_avail(source); i++){
-            this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,'harvester',{sourceId : source.id})
+            if(this.memory.creepNum['harvester'] < 5){
+                this.memory.creepNum['harvester'] += 1
+                this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,'harvester',{sourceId : source.id})
+            }
         }
 
     }
@@ -63,7 +85,6 @@ export class RoomExtention extends Room{
         const x = pos.x
         const y = pos.y
         const position = this.check_pos(x+1,y+1) + this.check_pos(x-1,y-1) + this.check_pos(x+1,y) + this.check_pos(x,y+1) + this.check_pos(x-1,y) + this.check_pos(x,y-1)
-        console.log(position + source.id)
         return position
     }
 
@@ -82,10 +103,28 @@ export class RoomExtention extends Room{
      */
     public roomInitial(): void{
         if(!this.memory.initial){
+            this.memory.creepNum={['harvester']:0,['upgrader']:0,['carrier']:0,['builder']:0,['repairer']:0}
             this.createHaversterApi()
-            this.createUpgraderApi()
-
+            this.createApi(1,'upgrader')
+            this.memory.level = 0
             this.memory.initial = true
+        }
+    }
+
+    private roomLevel(): void{
+        if(this.memory.level == 0){
+           const container= this.find(FIND_STRUCTURES,{
+                filter: (i: StructureContainer) => i.structureType == STRUCTURE_CONTAINER
+            })
+            if(container.length){
+                this.memory.level = 1
+                return
+            }else{
+                return
+            }
+        }
+        if(this.controller){
+            this.memory.level = this.controller?.level
         }
     }
 
@@ -114,6 +153,24 @@ export class RoomExtention extends Room{
             }
         }
             
+    }
+
+    private creepApiControl():void{
+        const level = this.memory.level
+        const roles = ['upgrader','carrier','builder','repairer']
+        roles.forEach(role => this.numberCalculate(role,level))
+    }
+
+    private numberCalculate(name:string, level:number): void{
+        const target = creepNumber[level][name]
+        if(target){
+            const diff = target - this.memory.creepNum[name]
+            if(diff !=0){
+                for(var i=0;i<diff;i++){
+                    this.createApi(this.memory.creepNum[name]+1+i,name)
+                }
+            }
+        }
     }
 
     public getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND{
@@ -201,8 +258,10 @@ export class RoomExtention extends Room{
     public doing():void{
         this.roomInitial()
         this.checkMemory()
+        this.roomLevel()
+        this.creepApiControl()
         this.fill_extension()
         this.fill_storage()
-        this. fill_tower()
+        this.fill_tower()
     }
 }

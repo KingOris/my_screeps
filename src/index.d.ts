@@ -50,6 +50,7 @@ interface CreepMemory {
 
 interface Room{
     addCreepApi(creepNames:string,role:CreepRoleName,spawnRoom:string,bodys:BodyRoles,data?:CreepData): void
+    createApi(number:number,role:string): void
     removeCreepApi(configName: string): void
     roomInitial(): void
     spawnMission(name:string): void
@@ -72,6 +73,12 @@ interface RoomMemory {
     }
     //是否初始化过
     initial?:boolean
+    //房间等级
+    level:number
+    //CreepNum
+    creepNum: {
+        [creepType:string]: number
+    }
     //需要能量的extension
     fill_extension?:Structure[]
     //需要能量的tower

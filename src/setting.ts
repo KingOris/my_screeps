@@ -20,3 +20,11 @@ export const bodaypart = {
         10000: { [WORK]: 12, [CARRY]: 1, [MOVE]: 6 }
     }
 }
+
+export const creepNumber:{[index:number]: {[role:string]:number}} = {
+    0: {['upgrader']: 1},
+    1: {['upgrader']: 1, ['builder']: 1, ['carrier']: 1},
+    2: {['upgrader']: 2, ['builder']: 2, ['carrier']: 2, ['repairer']: 1},
+    3: {['upgrader']: 3, ['builder']: 2, ['carrier']: 2,['repairer']: 2},
+    4: {['upgrader']: 4, ['builder']: 2,['carrier']: 3, ['repairer']: 3},
+}
