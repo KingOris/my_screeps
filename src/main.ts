@@ -1,5 +1,6 @@
 import { errorMapper } from './modules/errorMapper'
 import mountwork from './mount'
+import { doing } from './utils';
 
 export const loop = errorMapper(() => {
 
@@ -25,7 +26,9 @@ export const loop = errorMapper(() => {
         Game.cpu.generatePixel()
     }
     
-    Object.values(Game.rooms).forEach(room => room.doing())
-    Object.values(Game.spawns).forEach(spawn => spawn.work())
-    Object.values(Game.creeps).forEach(creep => creep.work())
+    //Object.values(Game.rooms).forEach(room => room.work())
+    //Object.values(Game.spawns).forEach(spawn => spawn.work())
+    //Object.values(Game.creeps).forEach(creep => console.log(creep.work))
+    //doing(Game.structures)
+    doing(Game.rooms,Game.structures,Game.creeps)
 })

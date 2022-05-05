@@ -72,7 +72,7 @@ export class RoomExtention extends Room{
      */
     private energy_source_pos_check(source:Source): void{
         for (let i = 0; i <= this.pos_avail(source); i++){
-            if(this.memory.creepNum['harvester'] < 5){
+            if(this.memory.creepNum['harvester'] < 4){
                 this.memory.creepNum['harvester'] += 1
                 this.addCreepApi('Harvester' + i + source.id,'harvester',this.name,'harvester',{sourceId : source.id})
             }
@@ -175,7 +175,7 @@ export class RoomExtention extends Room{
 
     public getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND{
         const containersWithEnergy = this.find(FIND_STRUCTURES, {
-            filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
+            filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] > 100 || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 100
         })
         
         let result:Array<StructureContainer | StructureStorage> =[]
@@ -189,7 +189,9 @@ export class RoomExtention extends Room{
                     result.push(i)
                 }
             }
-            return result
+            if(result){
+                return result
+            }
         }
 
         return ERR_NOT_FOUND
@@ -252,10 +254,14 @@ export class RoomExtention extends Room{
         }
     }
 
+    private find_enemy():void{
+        const enemy = this.find(FIND_HOSTILE_CREEPS)
+        this.memory.enemy_creep = enemy
+    }
     /**
      * 房间工作整合
      */
-    public doing():void{
+    public work():void{
         this.roomInitial()
         this.checkMemory()
         this.roomLevel()
@@ -263,5 +269,6 @@ export class RoomExtention extends Room{
         this.fill_extension()
         this.fill_storage()
         this.fill_tower()
+        this.find_enemy()
     }
 }

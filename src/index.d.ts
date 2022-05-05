@@ -45,6 +45,11 @@ interface CreepMemory {
      */
     working?: boolean
 
+    /**
+     * 保存自身位置
+     */
+    pos?:RoomPosition
+
     fillWallId?: StructureWall['id'] | StructureRampart['id']
 }
 
@@ -57,7 +62,7 @@ interface Room{
     checkMemory():void
     getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND
     getRepairstructure():Structure | ERR_NOT_FOUND
-    doing(): void
+    work(): void
 }
 
 interface RoomMemory {
@@ -85,6 +90,8 @@ interface RoomMemory {
     fill_tower?:Structure[]
     //未满的storage
     fill_storage?:Structure[]
+
+    enemy_creep?:Creep[]
 }
 
 interface StructureSpawn{
@@ -99,6 +106,12 @@ interface SpawnMemory{
     initial:boolean
 }
 
+interface StructureTower{
+    /**
+     * work
+     */
+    work():void
+}
 declare module NodeJS {
     // 全局对象
     interface Global {

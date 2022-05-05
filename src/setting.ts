@@ -11,7 +11,7 @@ export const bodaypart = {
     },
     harvester : {
         300: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
-        550: { [WORK]: 4, [CARRY]: 1, [MOVE]: 2 },
+        550: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
         800: { [WORK]: 6, [CARRY]: 1, [MOVE]: 3 },
         1300: { [WORK]: 8, [CARRY]: 1, [MOVE]: 4 },
         1800: { [WORK]: 10, [CARRY]: 1, [MOVE]: 5 },
@@ -24,7 +24,11 @@ export const bodaypart = {
 export const creepNumber:{[index:number]: {[role:string]:number}} = {
     0: {['upgrader']: 1},
     1: {['upgrader']: 1, ['builder']: 1, ['carrier']: 1},
-    2: {['upgrader']: 2, ['builder']: 2, ['carrier']: 2, ['repairer']: 1},
-    3: {['upgrader']: 3, ['builder']: 2, ['carrier']: 2,['repairer']: 2},
-    4: {['upgrader']: 4, ['builder']: 2,['carrier']: 3, ['repairer']: 3},
+    2: {['upgrader']: 2, ['builder']: 3, ['carrier']: 3, ['repairer']: 2},
+    3: {['upgrader']: 3, ['builder']: 3, ['carrier']: 4,['repairer']: 2},
+    4: {['upgrader']: 4, ['builder']: 3,['carrier']: 5, ['repairer']: 3},
+    5: {['upgrader']: 4, ['builder']: 3,['carrier']: 5, ['repairer']: 3},
+    6: {['upgrader']: 4, ['builder']: 3,['carrier']: 5, ['repairer']: 3},
+    7: {['upgrader']: 4, ['builder']: 3,['carrier']: 5, ['repairer']: 3},
+    8: {['upgrader']: 4, ['builder']: 3,['carrier']: 5, ['repairer']: 3}
 }

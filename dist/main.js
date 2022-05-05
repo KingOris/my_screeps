@@ -16060,6 +16060,15 @@ const assignPrototype = function (obj1, obj2) {
             obj1.prototype[key] = obj2.prototype[key];
     });
 };
+function doing(...hashMaps) {
+    hashMaps.forEach((obj) => {
+        Object.values(obj).forEach(item => {
+            if (item.work) {
+                item.work();
+            }
+        });
+    });
+}
 
 var mountCreep = () => {
     assignPrototype(Creep, CreepExtension);
@@ -16078,7 +16087,7 @@ const bodaypart = {
     },
     harvester: {
         300: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
-        550: { [WORK]: 4, [CARRY]: 1, [MOVE]: 2 },
+        550: { [WORK]: 2, [CARRY]: 1, [MOVE]: 1 },
         800: { [WORK]: 6, [CARRY]: 1, [MOVE]: 3 },
         1300: { [WORK]: 8, [CARRY]: 1, [MOVE]: 4 },
         1800: { [WORK]: 10, [CARRY]: 1, [MOVE]: 5 },
@@ -16090,9 +16099,13 @@ const bodaypart = {
 const creepNumber = {
     0: { ['upgrader']: 1 },
     1: { ['upgrader']: 1, ['builder']: 1, ['carrier']: 1 },
-    2: { ['upgrader']: 2, ['builder']: 2, ['carrier']: 2, ['repairer']: 1 },
-    3: { ['upgrader']: 3, ['builder']: 2, ['carrier']: 2, ['repairer']: 2 },
-    4: { ['upgrader']: 4, ['builder']: 2, ['carrier']: 3, ['repairer']: 3 },
+    2: { ['upgrader']: 2, ['builder']: 3, ['carrier']: 3, ['repairer']: 2 },
+    3: { ['upgrader']: 3, ['builder']: 3, ['carrier']: 4, ['repairer']: 2 },
+    4: { ['upgrader']: 4, ['builder']: 3, ['carrier']: 5, ['repairer']: 3 },
+    5: { ['upgrader']: 4, ['builder']: 3, ['carrier']: 5, ['repairer']: 3 },
+    6: { ['upgrader']: 4, ['builder']: 3, ['carrier']: 5, ['repairer']: 3 },
+    7: { ['upgrader']: 4, ['builder']: 3, ['carrier']: 5, ['repairer']: 3 },
+    8: { ['upgrader']: 4, ['builder']: 3, ['carrier']: 5, ['repairer']: 3 }
 };
 
 /*
@@ -16158,7 +16171,7 @@ class RoomExtention extends Room {
      */
     energy_source_pos_check(source) {
         for (let i = 0; i <= this.pos_avail(source); i++) {
-            if (this.memory.creepNum['harvester'] < 5) {
+            if (this.memory.creepNum['harvester'] < 4) {
                 this.memory.creepNum['harvester'] += 1;
                 this.addCreepApi('Harvester' + i + source.id, 'harvester', this.name, 'harvester', { sourceId: source.id });
             }
@@ -16253,7 +16266,7 @@ class RoomExtention extends Room {
     }
     getAvaliblesource() {
         const containersWithEnergy = this.find(FIND_STRUCTURES, {
-            filter: (i) => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 0
+            filter: (i) => i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] > 100 || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 100
         });
         let result = [];
         if (containersWithEnergy.length) {
@@ -16265,7 +16278,9 @@ class RoomExtention extends Room {
                     result.push(i);
                 }
             }
-            return result;
+            if (result) {
+                return result;
+            }
         }
         return ERR_NOT_FOUND;
     }
@@ -16318,10 +16333,14 @@ class RoomExtention extends Room {
             this.memory.fill_storage = [];
         }
     }
+    find_enemy() {
+        const enemy = this.find(FIND_HOSTILE_CREEPS);
+        this.memory.enemy_creep = enemy;
+    }
     /**
      * 房间工作整合
      */
-    doing() {
+    work() {
         this.roomInitial();
         this.checkMemory();
         this.roomLevel();
@@ -16329,6 +16348,7 @@ class RoomExtention extends Room {
         this.fill_extension();
         this.fill_storage();
         this.fill_tower();
+        this.find_enemy();
     }
 }
 
@@ -16430,6 +16450,29 @@ var mountSpawn = () => {
     assignPrototype(Spawn, SpawnExtension);
 };
 
+class TowerExtension extends StructureTower {
+    work() {
+        this.defense();
+    }
+    defense() {
+        const enemys = this.room.memory.enemy_creep;
+        if (!enemys || enemys.length <= 0) {
+            return;
+        }
+        this.fire(enemys);
+    }
+    fire(enemys) {
+        if (enemys.length <= 0) {
+            return ERR_NOT_FOUND;
+        }
+        return this.attack(this.pos.findClosestByRange(enemys));
+    }
+}
+
+var mountTower = () => {
+    assignPrototype(StructureTower, TowerExtension);
+};
+
 /**
  * 挂载所有属性和方法
  */
@@ -16438,6 +16481,7 @@ function mountwork () {
         mountCreep();
         mountRoom();
         mountSpawn();
+        mountTower();
         global.hasExtension = true;
         console.log('[mount] reload all extentions');
     }
@@ -16461,9 +16505,11 @@ const loop = errorMapper(() => {
     if (Game.cpu.bucket >= 10000) {
         Game.cpu.generatePixel();
     }
-    Object.values(Game.rooms).forEach(room => room.doing());
-    Object.values(Game.spawns).forEach(spawn => spawn.work());
-    Object.values(Game.creeps).forEach(creep => creep.work());
+    //Object.values(Game.rooms).forEach(room => room.work())
+    //Object.values(Game.spawns).forEach(spawn => spawn.work())
+    //Object.values(Game.creeps).forEach(creep => console.log(creep.work))
+    //doing(Game.structures)
+    doing(Game.rooms, Game.structures, Game.creeps);
 });
 
 exports.loop = loop;

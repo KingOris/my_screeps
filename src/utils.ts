@@ -10,3 +10,13 @@ export const assignPrototype = function(obj1: {[key: string]: any}, obj2: {[key:
         else obj1.prototype[key] = obj2.prototype[key]
     })
 }
+
+export function doing(...hashMaps:object[]):void{
+    hashMaps.forEach((obj) =>{
+        Object.values(obj).forEach(item=>{
+            if(item.work){
+                item.work()
+            }
+        })
+    })
+}
