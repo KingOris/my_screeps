@@ -98,6 +98,55 @@ export class RoomExtention extends Room{
                 return 1;
         }
     }
+
+    /**
+     * energy_source_pathFinder
+     */
+    private energy_source_pathFinder(structure:Structure):void {
+        if(!this.memory.target_pos){
+            this.memory.target_pos = {}
+        }
+
+        const structure_pos:RoomPosition = structure.pos
+
+        const energy_sources = this.find(FIND_STRUCTURES,{filter:i=>i.structureType==STRUCTURE_CONTAINER || i.structureType==STRUCTURE_STORAGE})
+        let map = new Map()
+        for(var source of energy_sources){
+            let path:PathStep[]
+            let source_array:Array<Structure['id']> = []
+            path = this.findPath(structure_pos,source.pos,{
+                ignoreCreeps:true,
+                plainCost:2,
+                costCallback:(roomName:string,costMatrix)=>{
+                    if(roomName == this.name){
+                        this.find(FIND_STRUCTURES).forEach(i=>{
+                            if(i.structureType == STRUCTURE_ROAD){
+                                costMatrix.set(i.pos.x, i.pos.y, 1)
+                            }
+                        })
+                    }
+                    return costMatrix
+                }
+            })
+            source_array.push(source.id)
+            if(!map.has(path.length)){
+                map.set(path.length,source_array)
+            }else{
+                source_array.push(map.get(path.length))
+                map.set(path.length,source_array)
+            }
+        }
+        const sorted =new Map([...map.entries()].sort());
+        let source_list:Array<StructureContainer['id'] | StructureStorage['id']>=[]
+        for(let values of sorted.values()){
+            for(let value of values){
+                source_list.push(value)
+            }
+        }
+        this.memory.target_pos[structure.id] = {source:source_list}
+    }
+
+
     /**
      * 房间内存初始化
      */
@@ -108,6 +157,7 @@ export class RoomExtention extends Room{
             this.createApi(1,'upgrader')
             this.memory.level = 0
             this.memory.initial = true
+            this.memory.container=[]
         }
     }
 
@@ -173,28 +223,26 @@ export class RoomExtention extends Room{
         }
     }
 
-    public getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND{
+    public getAvaliblesource(): void{
         const containersWithEnergy = this.find(FIND_STRUCTURES, {
             filter: (i: StructureContainer | StructureStorage) => i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] > 100 || i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] > 100
         })
         
-        let result:Array<StructureContainer | StructureStorage> =[]
+        let result:Array<StructureContainer['id'] | StructureStorage['id']> =[]
         if (containersWithEnergy.length){
             for (let i of containersWithEnergy){
                 if(i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100){
-                    result.push(i)
+                    result.push(i.id)
                 }
 
                 if(i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100){
-                    result.push(i)
+                    result.push(i.id)
                 }
             }
             if(result){
-                return result
+                this.memory.energy_avalible = result
             }
         }
-
-        return ERR_NOT_FOUND
     }
 
     public getRepairstructure():Structure | ERR_NOT_FOUND{
@@ -270,5 +318,13 @@ export class RoomExtention extends Room{
         this.fill_storage()
         this.fill_tower()
         this.find_enemy()
+        this.getAvaliblesource()
+        if(Game.time%100 ==0){
+            this.find(FIND_STRUCTURES,{filter:i=>{
+                if('store' in i && i.structureType != STRUCTURE_CONTAINER){
+                    this.energy_source_pathFinder(i)
+                }
+            }})
+        }
     }
 }

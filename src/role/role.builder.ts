@@ -44,6 +44,11 @@ const builder = (data:CreepData): CreepApi =>({
                 creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
             }
         }else{
+            
+            if(creep.memory.targetId){
+                delete creep.memory.targetId
+            }
+
             creep.setFillWallid()
             const result = creep.steadyWall()
             if(result == ERR_NOT_FOUND){

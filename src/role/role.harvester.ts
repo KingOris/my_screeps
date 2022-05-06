@@ -99,6 +99,10 @@ const harvester = (data: CreepData): CreepApi => ({
         if(!constructionSite){
             const containers = creep.pos.lookFor(LOOK_STRUCTURES).find(element => element.structureType == STRUCTURE_CONTAINER)
             if(containers){
+                //建造完就注册
+                if(!creep.room.memory.container.indexOf(containers)){
+                    creep.room.memory.container.push(containers)
+                }
                 return true
             }
         }

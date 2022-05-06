@@ -28,7 +28,8 @@ export const loop = errorMapper(() => {
     
     //Object.values(Game.rooms).forEach(room => room.work())
     //Object.values(Game.spawns).forEach(spawn => spawn.work())
-    //Object.values(Game.creeps).forEach(creep => console.log(creep.work))
+    //Object.values(Game.structures).forEach(creep => console.log(creep))
     //doing(Game.structures)
     doing(Game.rooms,Game.structures,Game.creeps)
+
 })

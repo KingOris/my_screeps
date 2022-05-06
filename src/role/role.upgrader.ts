@@ -31,16 +31,16 @@ const upgrader = (data:CreepData) : CreepApi => ({
 
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
-        const avalible_source = creep.room.getAvaliblesource()
+        const avalible_source = creep.room.memory.energy_avalible
 
-        if (avalible_source == ERR_NOT_FOUND){
+        if (!avalible_source){
             if(!creep.saying){
                 creep.say('我是傻x')
             }else{
                 creep.suicide()
             }
         }else{
-            creep.memory.sourceId = creep.findNearestSource(avalible_source).id
+            const source = creep.findSource()
         }
 
         return false

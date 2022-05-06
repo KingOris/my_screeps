@@ -3281,6 +3281,9 @@ const builder = (data) => ({
             }
         }
         else {
+            if (creep.memory.targetId) {
+                delete creep.memory.targetId;
+            }
             creep.setFillWallid();
             const result = creep.steadyWall();
             if (result == ERR_NOT_FOUND) {
@@ -15719,6 +15722,10 @@ const harvester = (data) => ({
         if (!constructionSite) {
             const containers = creep.pos.lookFor(LOOK_STRUCTURES).find(element => element.structureType == STRUCTURE_CONTAINER);
             if (containers) {
+                //建造完就注册
+                if (!creep.room.memory.container.indexOf(containers)) {
+                    creep.room.memory.container.push(containers);
+                }
                 return true;
             }
         }
@@ -15773,8 +15780,8 @@ const upgrader = (data) => ({
         }
         //配置能量获取地点-sourceId
         //获取所有存贮energy的建筑
-        const avalible_source = creep.room.getAvaliblesource();
-        if (avalible_source == ERR_NOT_FOUND) {
+        const avalible_source = creep.room.memory.energy_avalible;
+        if (!avalible_source) {
             if (!creep.saying) {
                 creep.say('我是傻x');
             }
@@ -15783,7 +15790,7 @@ const upgrader = (data) => ({
             }
         }
         else {
-            creep.memory.sourceId = creep.findNearestSource(avalible_source).id;
+            creep.findSource();
         }
         return false;
     },
@@ -16013,15 +16020,18 @@ class CreepExtension extends Creep {
             delete this.memory.fillWallId;
         return OK;
     }
-    findNearestSource(structurelist) {
-        if (this.memory.targetId) {
-            const target = Game.getObjectById(this.memory.targetId);
-            if (target) {
-                structurelist.sort((a, b) => (this.pos2(a, target) - this.pos2(b, target)));
-                return structurelist[0];
+    findNearestSource(target) {
+        const source_list = this.room.memory.target_pos[target.id];
+        console.log(this.name);
+        if (source_list) {
+            for (let i of source_list.source) {
+                if (this.room.memory.energy_avalible.indexOf(i)) {
+                    return Game.getObjectById(i);
+                }
             }
         }
-        return structurelist[0];
+        console.log(target.id);
+        return Game.getObjectById(this.room.memory.energy_avalible[0]);
     }
     pos2(structure1, structure2) {
         return Math.sqrt((structure1.pos.x - structure2.pos.x) ^ 2 + (structure1.pos.y - structure2.pos.y) ^ 2);
@@ -16029,20 +16039,32 @@ class CreepExtension extends Creep {
     findSource() {
         let source_list;
         let sourceStructure;
+        let target;
         if (!this.memory.sourceId) {
-            source_list = this.room.getAvaliblesource();
-            if (source_list == ERR_NOT_FOUND) {
+            source_list = this.room.memory.energy_avalible;
+            if (!source_list.length) {
                 this.say('一杯二锅头', true);
                 return ERR_NOT_FOUND;
             }
             else {
-                sourceStructure = this.findNearestSource(source_list);
-                this.memory.sourceId = sourceStructure.id;
-                return OK;
+                if (!this.memory.targetId) {
+                    target = this.room.find(FIND_MY_SPAWNS)[0];
+                }
+                else {
+                    target = Game.getObjectById(this.memory.targetId);
+                }
+                if (target) {
+                    sourceStructure = this.findNearestSource(target);
+                    this.memory.sourceId = sourceStructure.id;
+                    return OK;
+                }
+                else {
+                    return ERR_NOT_FOUND;
+                }
             }
         }
         else {
-            return this.memory.sourceId;
+            return OK;
         }
     }
 }
@@ -16195,6 +16217,51 @@ class RoomExtention extends Room {
         }
     }
     /**
+     * energy_source_pathFinder
+     */
+    energy_source_pathFinder(structure) {
+        if (!this.memory.target_pos) {
+            this.memory.target_pos = {};
+        }
+        const structure_pos = structure.pos;
+        const energy_sources = this.find(FIND_STRUCTURES, { filter: i => i.structureType == STRUCTURE_CONTAINER || i.structureType == STRUCTURE_STORAGE });
+        let map = new Map();
+        for (var source of energy_sources) {
+            let path;
+            let source_array = [];
+            path = this.findPath(structure_pos, source.pos, {
+                ignoreCreeps: true,
+                plainCost: 2,
+                costCallback: (roomName, costMatrix) => {
+                    if (roomName == this.name) {
+                        this.find(FIND_STRUCTURES).forEach(i => {
+                            if (i.structureType == STRUCTURE_ROAD) {
+                                costMatrix.set(i.pos.x, i.pos.y, 1);
+                            }
+                        });
+                    }
+                    return costMatrix;
+                }
+            });
+            source_array.push(source.id);
+            if (!map.has(path.length)) {
+                map.set(path.length, source_array);
+            }
+            else {
+                source_array.push(map.get(path.length));
+                map.set(path.length, source_array);
+            }
+        }
+        const sorted = new Map([...map.entries()].sort());
+        let source_list = [];
+        for (let values of sorted.values()) {
+            for (let value of values) {
+                source_list.push(value);
+            }
+        }
+        this.memory.target_pos[structure.id] = { source: source_list };
+    }
+    /**
      * 房间内存初始化
      */
     roomInitial() {
@@ -16204,6 +16271,7 @@ class RoomExtention extends Room {
             this.createApi(1, 'upgrader');
             this.memory.level = 0;
             this.memory.initial = true;
+            this.memory.container = [];
         }
     }
     roomLevel() {
@@ -16272,17 +16340,16 @@ class RoomExtention extends Room {
         if (containersWithEnergy.length) {
             for (let i of containersWithEnergy) {
                 if (i.structureType == STRUCTURE_CONTAINER && i.store[RESOURCE_ENERGY] >= 100) {
-                    result.push(i);
+                    result.push(i.id);
                 }
                 if (i.structureType == STRUCTURE_STORAGE && i.store[RESOURCE_ENERGY] >= 100) {
-                    result.push(i);
+                    result.push(i.id);
                 }
             }
             if (result) {
-                return result;
+                this.memory.energy_avalible = result;
             }
         }
-        return ERR_NOT_FOUND;
     }
     getRepairstructure() {
         const damagedStructure = this.find(FIND_STRUCTURES, {
@@ -16349,6 +16416,14 @@ class RoomExtention extends Room {
         this.fill_storage();
         this.fill_tower();
         this.find_enemy();
+        this.getAvaliblesource();
+        if (Game.time % 100 == 0) {
+            this.find(FIND_STRUCTURES, { filter: i => {
+                    if ('store' in i && i.structureType != STRUCTURE_CONTAINER) {
+                        this.energy_source_pathFinder(i);
+                    }
+                } });
+        }
     }
 }
 
@@ -16507,7 +16582,7 @@ const loop = errorMapper(() => {
     }
     //Object.values(Game.rooms).forEach(room => room.work())
     //Object.values(Game.spawns).forEach(spawn => spawn.work())
-    //Object.values(Game.creeps).forEach(creep => console.log(creep.work))
+    //Object.values(Game.structures).forEach(creep => console.log(creep))
     //doing(Game.structures)
     doing(Game.rooms, Game.structures, Game.creeps);
 });

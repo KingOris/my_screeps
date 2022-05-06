@@ -2,8 +2,7 @@ interface Creep{
     work(): void
     steadyWall(): OK| ERR_NOT_FOUND 
     setFillWallid():void
-    findSource(): Id<Source> | Id<StructureContainer> | Id<StructureStorage> | OK | ERR_NOT_FOUND
-    findNearestSource(structurelist:Array<StructureContainer | StructureStorage> ):StructureContainer | StructureStorage
+    findSource(): OK | ERR_NOT_FOUND
 }
 
 interface CreepMemory {
@@ -60,7 +59,7 @@ interface Room{
     roomInitial(): void
     spawnMission(name:string): void
     checkMemory():void
-    getAvaliblesource(): Array<StructureContainer | StructureStorage> | ERR_NOT_FOUND
+    getAvaliblesource(): void
     getRepairstructure():Structure | ERR_NOT_FOUND
     work(): void
 }
@@ -78,20 +77,28 @@ interface RoomMemory {
     }
     //是否初始化过
     initial?:boolean
+    //房间能量相对位置
+    target_pos:{
+        [structure:string]:{source:Array<StructureContainer['id'] | StructureStorage['id']>}
+    }
     //房间等级
     level:number
     //CreepNum
     creepNum: {
         [creepType:string]: number
     }
+    //
+    container:Structure[]
     //需要能量的extension
     fill_extension?:Structure[]
     //需要能量的tower
     fill_tower?:Structure[]
     //未满的storage
     fill_storage?:Structure[]
-
+    //敌对creep
     enemy_creep?:Creep[]
+    //房间可用能量建筑
+    energy_avalible: Array<StructureContainer['id'] | StructureStorage['id']>
 }
 
 interface StructureSpawn{
@@ -158,4 +165,10 @@ interface UpgraderData {
     targetId?: StructureController['id']
 }
 
+interface StructureContainer{
+    work():void
+}
 
+interface StructureStorage{
+    work():void
+}

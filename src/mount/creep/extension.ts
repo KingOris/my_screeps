@@ -88,37 +88,50 @@ export class CreepExtension extends Creep {
         return OK
     }
 
-    public findNearestSource(structurelist:Array<StructureContainer | StructureStorage>):StructureContainer | StructureStorage{
-        
-        if(this.memory.targetId){
-            const target:Structure|null = Game.getObjectById(this.memory.targetId!)
-            if(target){
-                structurelist.sort((a,b)=>(this.pos2(a,target)-this.pos2(b,target)))
-                return structurelist[0]
+    private findNearestSource(target:Structure):StructureContainer | StructureStorage{ 
+       
+        const source_list = this.room.memory.target_pos[target.id]
+        console.log(this.name)
+        if(source_list){
+            for(let i of source_list.source){
+                if(this.room.memory.energy_avalible.indexOf(i)){
+                    return Game.getObjectById<StructureContainer | StructureStorage>(i)!
+                }
             }
         }
-        return structurelist[0]
+        console.log(target.id)
+        return Game.getObjectById(this.room.memory.energy_avalible[0])!
     }
 
     private pos2(structure1:Structure,structure2:Structure):number{
         return Math.sqrt((structure1.pos.x-structure2.pos.x)^2 + (structure1.pos.y-structure2.pos.y)^2)
     }
 
-    public findSource(): Id<Source> | Id<StructureContainer> | Id<StructureStorage> | OK | ERR_NOT_FOUND{
-        let source_list: Array<StructureContainer | StructureStorage>  | ERR_NOT_FOUND
+    public findSource(): OK | ERR_NOT_FOUND{
+        let source_list: Array<StructureContainer['id'] | StructureStorage['id']>
         let sourceStructure:StructureContainer | StructureStorage
+        let target:Structure | null
         if(!this.memory.sourceId){
-            source_list= this.room.getAvaliblesource()
-            if(source_list == ERR_NOT_FOUND){
+            source_list= this.room.memory.energy_avalible
+            if(!source_list.length){
                 this.say('一杯二锅头',true)
                 return ERR_NOT_FOUND
             }else{
-                sourceStructure = this.findNearestSource(source_list)
-                this.memory.sourceId = sourceStructure.id
-                return OK
+                if(!this.memory.targetId){
+                    target = this.room.find(FIND_MY_SPAWNS)[0]
+                }else{
+                    target = Game.getObjectById<Structure>(this.memory.targetId!)
+                }
+                if(target){
+                    sourceStructure = this.findNearestSource(target)
+                    this.memory.sourceId = sourceStructure.id
+                    return OK
+                }else{
+                    return ERR_NOT_FOUND
+                }
             }
         }else{
-            return this.memory.sourceId
+            return OK
         }
     }
 
