@@ -91,15 +91,15 @@ export class CreepExtension extends Creep {
     private findNearestSource(target:Structure):StructureContainer | StructureStorage{ 
        
         const source_list = this.room.memory.target_pos[target.id]
-        console.log(this.name)
+
         if(source_list){
             for(let i of source_list.source){
-                if(this.room.memory.energy_avalible.indexOf(i)){
+                if(this.room.memory.energy_avalible.indexOf(i) > -1){
                     return Game.getObjectById<StructureContainer | StructureStorage>(i)!
                 }
             }
         }
-        console.log(target.id)
+
         return Game.getObjectById(this.room.memory.energy_avalible[0])!
     }
 

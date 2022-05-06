@@ -100,8 +100,9 @@ const harvester = (data: CreepData): CreepApi => ({
             const containers = creep.pos.lookFor(LOOK_STRUCTURES).find(element => element.structureType == STRUCTURE_CONTAINER)
             if(containers){
                 //建造完就注册
-                if(!creep.room.memory.container.indexOf(containers)){
+                if(creep.room.memory.container.indexOf(containers) == -1 ){
                     creep.room.memory.container.push(containers)
+                    console.log('Container has been registed')
                 }
                 return true
             }

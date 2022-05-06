@@ -15723,8 +15723,9 @@ const harvester = (data) => ({
             const containers = creep.pos.lookFor(LOOK_STRUCTURES).find(element => element.structureType == STRUCTURE_CONTAINER);
             if (containers) {
                 //建造完就注册
-                if (!creep.room.memory.container.indexOf(containers)) {
+                if (creep.room.memory.container.indexOf(containers) == -1) {
                     creep.room.memory.container.push(containers);
+                    console.log('Container has been registed');
                 }
                 return true;
             }
@@ -16022,15 +16023,13 @@ class CreepExtension extends Creep {
     }
     findNearestSource(target) {
         const source_list = this.room.memory.target_pos[target.id];
-        console.log(this.name);
         if (source_list) {
             for (let i of source_list.source) {
-                if (this.room.memory.energy_avalible.indexOf(i)) {
+                if (this.room.memory.energy_avalible.indexOf(i) > -1) {
                     return Game.getObjectById(i);
                 }
             }
         }
-        console.log(target.id);
         return Game.getObjectById(this.room.memory.energy_avalible[0]);
     }
     pos2(structure1, structure2) {
